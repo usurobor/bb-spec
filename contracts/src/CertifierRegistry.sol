@@ -32,6 +32,7 @@ contract CertifierRegistry is Ownable {
     event VouchGiven(address indexed voucher, address indexed candidate);
     event VouchRevoked(address indexed voucher, address indexed candidate);
     event CertifierAdmitted(address indexed certifier);
+    event CertifierRevoked(address indexed certifier, address indexed revokedBy);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -43,6 +44,8 @@ contract CertifierRegistry is Ownable {
     error NotVouched();
     error CannotVouchSelf();
     error GenesisAlreadyInitialized();
+    error NotGenesisKey();
+    error CannotRevokeGenesisKey();
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -112,6 +115,23 @@ contract CertifierRegistry is Ownable {
         }
 
         emit VouchRevoked(msg.sender, candidate);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          REVOCATION FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Revoke a certifier's status (Genesis Keys only, v1 safety valve)
+    /// @param certifier Address to revoke
+    function revokeCertifier(address certifier) external {
+        if (!isGenesisKey[msg.sender]) revert NotGenesisKey();
+        if (!isCertifier[certifier]) revert NotCertifier();
+        if (isGenesisKey[certifier]) revert CannotRevokeGenesisKey();
+
+        isCertifier[certifier] = false;
+        certifierCount--;
+
+        emit CertifierRevoked(certifier, msg.sender);
     }
 
     /*//////////////////////////////////////////////////////////////

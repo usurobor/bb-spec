@@ -7,6 +7,24 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.14] - 2026-01-04
+
+### Protocol Spec (Whitepaper)
+- Standard now includes evidence requirements
+- BBT: does not expire (v1)
+- $EC: fee assets may expand
+- Genesis Keys: manage Certifier set (not just admission)
+- Added Certifier revocation: Genesis Keys may revoke (v1 safety valve)
+- Evidence follows the Standard
+- Flow step 5: Leaderboards rank verified PASS per Standard
+- Added "Out of Scope (v1)" section
+- Added "Future" section
+
+### Contracts
+- CertifierRegistry.sol — Added revocation by Genesis Keys
+
+---
+
 ## [1.0.13] - 2026-01-04
 
 ### Protocol Spec (Whitepaper)
