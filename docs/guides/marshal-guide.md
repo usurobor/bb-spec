@@ -1,71 +1,73 @@
-# Certifier Guide
+# Marshal Guide
 ## Verifying Physical Achievements (v1.0.16)
+
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Ladder (rankings)
 
 ---
 
 ## Overview
 
-As a **Certifier**, you verify that Provers have genuinely completed physical achievements through **live observation**. Your attestations enable the minting of Body Bound Tokens (BBTs) on PASS.
+As a **Marshal**, you verify that Contenders have genuinely completed physical achievements through **live observation**. Your Records enable the minting of Badges on PASS.
 
 ---
 
-## Becoming a Certifier
+## Becoming a Marshal
 
 ### Phase 1: Genesis Key
 
-Genesis Certifiers are established at protocol launch:
+Genesis Marshals are established at protocol launch:
 - Selected for demonstrated expertise
 - Community standing
 - Bootstrap the trust network
-- Can revoke other Certifiers (v1 safety valve)
+- Can revoke other Marshals (v1 safety valve)
 
 ### Phase 2: 3-Vouch Admission
 
-New Certifiers join via vouching:
+New Marshals join via vouching:
 
 1. **Build Reputation**: Demonstrate expertise in your domain
-2. **Connect**: Engage with existing Certifiers
-3. **Receive Vouches**: Get **3 distinct Certifiers** to vouch for you on-chain
+2. **Connect**: Engage with existing Marshals
+3. **Receive Vouches**: Get **3 distinct Marshals** to vouch for you on-chain
 4. **Automatic Admission**: Once 3 vouches received, you're in
 
 ```javascript
 // Check your vouch status
-const vouches = await certifierRegistry.vouchesReceived(yourAddress);
+const vouches = await marshalRegistry.vouchesReceived(yourAddress);
 console.log(`Vouches: ${vouches.length}/3`);
 ```
 
 ---
 
-## Certifier Responsibilities
+## Marshal Responsibilities
 
 ### Core Duties
 
-1. **Live Observation**: Observe attempts in real-time (co-located or video)
-2. **Honest Verification**: Only certify genuine achievements
-3. **Thorough Review**: Check all Standard requirements
-4. **Timely Response**: Respond to Prover requests promptly
-5. **Maintain Integrity**: Uphold protocol standards
+1. **Live Observation**: Observe Runs in real-time (co-located or video)
+2. **Honest Verification**: Only sign genuine achievements
+3. **Thorough Review**: Check all Trial requirements
+4. **Timely Response**: Respond to Contender requests promptly
+5. **Maintain Integrity**: Uphold protocol Trials
 
 ### Revocation (v1 Safety Valve)
 
-Genesis Keys may revoke Certifier status:
+Genesis Keys may revoke Marshal status:
 
 ```javascript
 // Only Genesis Keys can call this
-await certifierRegistry.revokeCertifier(certifierAddress);
+await marshalRegistry.revokeMarshal(marshalAddress);
 ```
 
-A revoked Certifier cannot submit new attestations.
+A revoked Marshal cannot submit new Records.
 
 ---
 
 ## Rate Limits
 
-The registry may enforce rate limits per Certifier per Standard per time window:
+The registry may enforce rate limits per Marshal per Trial per time window:
 
 ```javascript
 // Check if you're within rate limit
-const withinLimit = await certifierRegistry.checkRateLimit(yourAddress, standardId);
+const withinLimit = await marshalRegistry.checkRateLimit(yourAddress, trialId);
 ```
 
 This prevents excessive certifications and maintains quality.
@@ -76,17 +78,17 @@ This prevents excessive certifications and maintains quality.
 
 ### Step 1: Receive Request
 
-Provers will contact you with:
-- Standard (standardId, version) they're attempting
+Contenders will contact you with:
+- Trial (trialId, version) they're attempting
 - Request for live observation session
 
-### Step 2: Review Standard
+### Step 2: Review Trial
 
 Verify you understand the requirements:
 
 ```javascript
-const standard = await standardsRegistry.getStandard(standardId);
-const version = await standardsRegistry.getVersion(standardId, versionNum);
+const trial = await trialsRegistry.getTrial(trialId);
+const version = await trialsRegistry.getVersion(trialId, versionNum);
 // Fetch and review full requirements from metadata
 ```
 
@@ -99,16 +101,16 @@ Key elements to review:
 ### Step 3: Live Observation
 
 **Observation Methods**:
-- **Co-located**: Present in person with the Prover
+- **Co-located**: Present in person with the Contender
 - **Live video**: Real-time audio-video call
 
 **During Observation**:
 - Verify equipment matches tool spec
-- Watch the entire attempt in real-time
+- Watch the entire Run in real-time
 - Note timestamps and key moments
 - Confirm evidence requirements are captured
 
-Recording is defined by the Standard and requires **mutual consent**.
+Recording is defined by the Trial and requires **mutual consent**.
 
 ### Step 4: Make Decision
 
@@ -124,19 +126,19 @@ Recording is defined by the Standard and requires **mutual consent**.
 - Concerns about authenticity
 - Observation was not truly live
 
-### Step 5: Co-sign Attestation
+### Step 5: Co-sign Record
 
-If decision made, co-sign the attestation:
+If decision made, co-sign the Record:
 
 ```javascript
-const attestation = {
-  standardId: standardId,
-  version: standardVersion,
-  prover: proverAddress,
-  certifier: yourAddress,
+const record = {
+  trialId: trialId,
+  version: trialVersion,
+  contender: contenderAddress,
+  marshal: yourAddress,
   result: 1,  // PASS=1, NO_PASS=0
-  timestamp: attemptTimestamp,
-  nonce: await popw.getCurrentNonce(proverAddress),
+  timestamp: runTimestamp,
+  nonce: await popw.getCurrentNonce(contenderAddress),
   deadline: Math.floor(Date.now() / 1000) + 3600,
   toolId: toolId,           // Optional
   evidenceHash: evidenceHash // Optional
@@ -150,13 +152,13 @@ const domain = {
   verifyingContract: popwAddress
 };
 
-const signature = await signer.signTypedData(domain, types, attestation);
+const signature = await signer.signTypedData(domain, types, record);
 ```
 
-### Step 6: Return to Prover
+### Step 6: Return to Contender
 
-Send the Prover:
-- Signed attestation data
+Send the Contender:
+- Signed Record data
 - Your signature
 - Any feedback
 
@@ -167,7 +169,7 @@ Send the Prover:
 ### Live Observation Checklist
 
 - [ ] Observation is real-time (not recorded)
-- [ ] Equipment matches Standard tool spec
+- [ ] Equipment matches Trial tool spec
 - [ ] Achievement completed as specified
 - [ ] Duration requirements met
 - [ ] All required views captured
@@ -183,12 +185,12 @@ Send the Prover:
 
 ---
 
-## Vouching for New Certifiers
+## Vouching for New Marshals
 
-As a Certifier, you can vouch for candidates:
+As a Marshal, you can vouch for candidates:
 
 ```javascript
-await certifierRegistry.vouch(candidateAddress);
+await marshalRegistry.vouch(candidateAddress);
 ```
 
 ### Vouching Guidelines
@@ -197,7 +199,7 @@ await certifierRegistry.vouch(candidateAddress);
 - Have demonstrated expertise
 - Show integrity and reliability
 - Understand the protocol
-- Will uphold standards
+- Will uphold Trials
 
 **Don't vouch for:**
 - Unknown individuals
@@ -209,7 +211,7 @@ await certifierRegistry.vouch(candidateAddress);
 If circumstances change:
 
 ```javascript
-await certifierRegistry.revokeVouch(candidateAddress);
+await marshalRegistry.revokeVouch(candidateAddress);
 ```
 
 ---
@@ -218,19 +220,19 @@ await certifierRegistry.revokeVouch(candidateAddress);
 
 ### Earning Fees
 
-Certifiers earn a fee **per attempt** (both PASS and NO PASS):
+Marshals earn a fee **per Run** (both PASS and NO PASS):
 
 ```
-Certifier Reward = Base Fee × Certifier BPS / 10000
+Marshal Reward = Base Fee × Marshal BPS / 10000
 ```
 
-This is paid for every attempt you certify, regardless of outcome.
+This is paid for every Run you observe, regardless of outcome.
 
 ### Example
 
-Standard with 100 $EC base fee, 60% certifier share:
+Trial with 100 $EC base fee, 60% Marshal share:
 ```
-100 × 6000 / 10000 = 60 $EC per attempt
+100 × 6000 / 10000 = 60 $EC per Run
 ```
 
 ---
@@ -238,13 +240,13 @@ Standard with 100 $EC base fee, 60% certifier share:
 ## Best Practices
 
 ### Be Thorough
-- Review all requirements before certifying
+- Review all requirements before signing
 - Don't rush verifications
 - Ask for clarification if needed
 
 ### Be Fair
-- Apply standards consistently
-- Don't favor certain Provers
+- Apply Trials consistently
+- Don't favor certain Contenders
 - Judge evidence objectively
 
 ### Be Professional
@@ -253,13 +255,13 @@ Standard with 100 $EC base fee, 60% certifier share:
 - Provide constructive feedback on NO PASS
 
 ### Be Honest
-- Never certify unverified achievements
+- Never sign unverified achievements
 - Report suspicious activity
 - Maintain protocol integrity
 
 ### Monitor Your Limits
-- Be aware of rate limits per standard
-- Don't exceed sustainable certification volume
+- Be aware of rate limits per Trial
+- Don't exceed sustainable Run volume
 - Maintain quality over quantity
 
 ---
@@ -278,20 +280,20 @@ When achievement is close but unclear:
 If observation has technical problems:
 1. Reschedule the live session
 2. Ensure better connection/setup
-3. Don't certify based on incomplete observation
+3. Don't sign based on incomplete observation
 
 ### Disputes
 
-If Prover disagrees with NO PASS:
+If Contender disagrees with NO PASS:
 1. Explain specific requirement not met
-2. Offer to observe another attempt
+2. Offer to observe another Run
 3. Suggest improvements for next time
 
 ---
 
 ## Monitoring
 
-Anomalous Certifier–Prover concentration may be excluded from leaderboard eligibility. Maintain diverse certification patterns.
+Anomalous Marshal–Contender concentration may be excluded from Ladder eligibility. Maintain diverse certification patterns.
 
 ---
 
@@ -303,4 +305,4 @@ Anomalous Certifier–Prover concentration may be excluded from leaderboard elig
 
 ---
 
-*Certifier Guide v1.0.16*
+*Marshal Guide v1.0.16*

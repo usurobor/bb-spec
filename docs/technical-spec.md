@@ -1,6 +1,8 @@
 # Technical Specification
 ## Embodied Coherence Protocol v1.0.16
 
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (BBT credential) • Ladder (rankings)
+
 ---
 
 ## 1. Architecture Overview
@@ -13,12 +15,12 @@
 ├─────────────────────────────────────────────────────────────┤
 │                    Smart Contracts                          │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │  Certifier  │ │  Standards  │ │    PoPW     │           │
-│  │  Registry   │ │  Registry   │ │  (Attest)   │           │
+│  │   Marshal   │ │   Trials    │ │    PoPW     │           │
+│  │  Registry   │ │  Registry   │ │  (Record)   │           │
 │  └─────────────┘ └─────────────┘ └──────┬──────┘           │
 │                                         │                   │
 │  ┌─────────────┐ ┌─────────────┐       │                   │
-│  │    BBT      │ │     EC      │←──────┘                   │
+│  │   Badge     │ │     EC      │←──────┘                   │
 │  │   (SBT)     │ │  (ERC-20)   │                           │
 │  └─────────────┘ └─────────────┘                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -30,13 +32,13 @@
 
 ## 2. Smart Contract Specifications
 
-### 2.1 CertifierRegistry.sol
+### 2.1 MarshalRegistry.sol
 
-**Purpose**: Manage Certifier authorization, vouching, revocation, and rate limits.
+**Purpose**: Manage Marshal authorization, vouching, revocation, and rate limits.
 
 **State Variables**:
 ```solidity
-mapping(address => bool) public isCertifier;
+mapping(address => bool) public isMarshal;
 mapping(address => bool) public isGenesisKey;
 mapping(address => address[]) public vouchesReceived;
 mapping(address => mapping(address => bool)) public hasVouched;
@@ -45,109 +47,109 @@ uint256 public constant VOUCHES_REQUIRED = 3;
 // Rate limiting
 struct RateLimit {
     uint64 windowSeconds;
-    uint32 maxAttestations;
+    uint32 maxRuns;
 }
 mapping(bytes32 => RateLimit) public rateLimits;
-mapping(address => mapping(bytes32 => mapping(uint64 => uint32))) public attestationCounts;
+mapping(address => mapping(bytes32 => mapping(uint64 => uint32))) public runCounts;
 ```
 
 **Functions**:
 ```solidity
 function initializeGenesis(address[] calldata genesisKeys) external onlyOwner;
-function vouch(address candidate) external onlyCertifier;
-function revokeVouch(address candidate) external onlyCertifier;
-function revokeCertifier(address certifier) external onlyGenesisKey;
-function getCertifierStatus(address account) external view returns (bool);
+function vouch(address candidate) external onlyMarshal;
+function revokeVouch(address candidate) external onlyMarshal;
+function revokeMarshal(address marshal) external onlyGenesisKey;
+function getMarshalStatus(address account) external view returns (bool);
 
 // Rate limiting
-function setRateLimit(bytes32 standardId, uint64 windowSeconds, uint32 maxAttestations) external onlyOwner;
-function recordAttestation(address certifier, bytes32 standardId) external onlyPoPW returns (bool);
-function checkRateLimit(address certifier, bytes32 standardId) external view returns (bool);
+function setRateLimit(bytes32 trialId, uint64 windowSeconds, uint32 maxRuns) external onlyOwner;
+function recordRun(address marshal, bytes32 trialId) external onlyPoPW returns (bool);
+function checkRateLimit(address marshal, bytes32 trialId) external view returns (bool);
 ```
 
 **Events**:
 ```solidity
-event GenesisKeyAdded(address indexed certifier);
-event CertifierVouched(address indexed voucher, address indexed candidate);
+event GenesisKeyAdded(address indexed marshal);
+event MarshalVouched(address indexed voucher, address indexed candidate);
 event VouchRevoked(address indexed voucher, address indexed candidate);
-event CertifierAdmitted(address indexed certifier);
-event CertifierRevoked(address indexed certifier, address indexed revokedBy);
-event RateLimitSet(bytes32 indexed standardId, uint64 windowSeconds, uint32 maxAttestations);
+event MarshalAdmitted(address indexed marshal);
+event MarshalRevoked(address indexed marshal, address indexed revokedBy);
+event RateLimitSet(bytes32 indexed trialId, uint64 windowSeconds, uint32 maxRuns);
 ```
 
 ---
 
-### 2.2 StandardsRegistry.sol
+### 2.2 TrialsRegistry.sol
 
-**Purpose**: Store and manage versioned certification Standard definitions.
+**Purpose**: Store and manage versioned Trial definitions.
 
 **State Variables**:
 ```solidity
-struct StandardVersion {
+struct TrialVersion {
     bytes32 metadataHash;
-    bool leaderboardEligible;
+    bool ladderEligible;
     uint256 createdAt;
 }
 
-struct Standard {
+struct Trial {
     bytes32 id;
-    address creator;
+    address architect;
     uint32 latestVersion;
     uint256 royaltyBps;
     uint256 baseFee;
     bool active;
 }
 
-mapping(bytes32 => Standard) public standards;
-mapping(bytes32 => mapping(uint32 => StandardVersion)) public versions;
-bytes32[] public standardIds;
+mapping(bytes32 => Trial) public trials;
+mapping(bytes32 => mapping(uint32 => TrialVersion)) public versions;
+bytes32[] public trialIds;
 ```
 
 **Functions**:
 ```solidity
-function createStandard(
+function createTrial(
     bytes32 metadataHash,
     uint256 royaltyBps,
     uint256 baseFee
-) external returns (bytes32 standardId);
+) external returns (bytes32 trialId);
 
 function addVersion(
-    bytes32 standardId,
+    bytes32 trialId,
     bytes32 metadataHash
 ) external returns (uint32 version);
 
-function setLeaderboardEligible(
-    bytes32 standardId,
+function setLadderEligible(
+    bytes32 trialId,
     uint32 version,
     bool eligible
 ) external onlyOwner;
 
-function deactivateStandard(bytes32 standardId) external;
-function getStandard(bytes32 standardId) external view returns (Standard memory);
-function getVersion(bytes32 standardId, uint32 version) external view returns (StandardVersion memory);
+function deactivateTrial(bytes32 trialId) external;
+function getTrial(bytes32 trialId) external view returns (Trial memory);
+function getVersion(bytes32 trialId, uint32 version) external view returns (TrialVersion memory);
 ```
 
 **Events**:
 ```solidity
-event StandardRegistered(bytes32 indexed id, address indexed creator, bytes32 metadataHash);
-event VersionAdded(bytes32 indexed standardId, uint32 version, bytes32 metadataHash);
-event LeaderboardEligibilitySet(bytes32 indexed standardId, uint32 version, bool eligible);
-event StandardDeactivated(bytes32 indexed id);
+event TrialRegistered(bytes32 indexed id, address indexed architect, bytes32 metadataHash);
+event VersionAdded(bytes32 indexed trialId, uint32 version, bytes32 metadataHash);
+event LadderEligibilitySet(bytes32 indexed trialId, uint32 version, bool eligible);
+event TrialDeactivated(bytes32 indexed id);
 ```
 
 ---
 
 ### 2.3 PoPW.sol
 
-**Purpose**: Core attestation and minting contract with nonce/deadline validation.
+**Purpose**: Core Record submission and Badge minting with nonce/deadline validation.
 
 **State Variables**:
 ```solidity
-struct Attestation {
-    bytes32 standardId;
+struct Record {
+    bytes32 trialId;
     uint32 version;
-    address prover;
-    address certifier;
+    address contender;
+    address marshal;
     uint8 result;          // PASS=1, NO_PASS=0
     uint64 timestamp;
     uint64 nonce;
@@ -160,98 +162,98 @@ uint8 public constant PASS = 1;
 uint8 public constant NO_PASS = 0;
 
 mapping(address => uint64) public nonces;
-mapping(bytes32 => bool) public attestationRecorded;
+mapping(bytes32 => bool) public recordSubmitted;
 mapping(address => mapping(bytes32 => mapping(uint32 => bool))) public hasPassed;
 
-ICertifierRegistry public certifierRegistry;
-IStandardsRegistry public standardsRegistry;
-IBBT public bbt;
+IMarshalRegistry public marshalRegistry;
+ITrialsRegistry public trialsRegistry;
+IBadge public badge;
 IEC public ecToken;
 ```
 
 **Functions**:
 ```solidity
-function attest(
-    Attestation calldata attestation,
-    bytes calldata proverSig,
-    bytes calldata certifierSig
+function submitRecord(
+    Record calldata record,
+    bytes calldata contenderSig,
+    bytes calldata marshalSig
 ) external returns (uint256 tokenId);
 
 function verifySignatures(
-    Attestation calldata attestation,
-    bytes calldata proverSig,
-    bytes calldata certifierSig
+    Record calldata record,
+    bytes calldata contenderSig,
+    bytes calldata marshalSig
 ) public view returns (bool);
 
-function getAttestationHash(Attestation calldata attestation) public pure returns (bytes32);
-function getCurrentNonce(address prover) external view returns (uint64);
+function getRecordHash(Record calldata record) public pure returns (bytes32);
+function getCurrentNonce(address contender) external view returns (uint64);
 ```
 
 **Validation Logic**:
 ```solidity
-function attest(...) external returns (uint256 tokenId) {
+function submitRecord(...) external returns (uint256 tokenId) {
     // 1. Verify deadline not expired
-    require(block.timestamp <= attestation.deadline, "Deadline expired");
+    require(block.timestamp <= record.deadline, "Deadline expired");
 
     // 2. Verify nonce matches expected
-    require(attestation.nonce == nonces[attestation.prover], "Invalid nonce");
+    require(record.nonce == nonces[record.contender], "Invalid nonce");
 
-    // 3. Verify certifier is authorized (at submission time)
-    require(certifierRegistry.isCertifier(attestation.certifier), "Not authorized");
+    // 3. Verify marshal is authorized (at submission time)
+    require(marshalRegistry.isMarshal(record.marshal), "Not authorized");
 
     // 4. Check rate limits
-    require(certifierRegistry.recordAttestation(attestation.certifier, attestation.standardId), "Rate limit exceeded");
+    require(marshalRegistry.recordRun(record.marshal, record.trialId), "Rate limit exceeded");
 
     // 5. Verify signatures
-    require(verifySignatures(attestation, proverSig, certifierSig), "Invalid signatures");
+    require(verifySignatures(record, contenderSig, marshalSig), "Invalid signatures");
 
     // 6. Increment nonce
-    nonces[attestation.prover]++;
+    nonces[record.contender]++;
 
-    // 7. Record attestation
-    bytes32 attestHash = getAttestationHash(attestation);
-    attestationRecorded[attestHash] = true;
+    // 7. Store record hash
+    bytes32 recordHash = getRecordHash(record);
+    recordSubmitted[recordHash] = true;
 
     // 8. Handle result
-    if (attestation.result == PASS) {
-        // Check one PASS per (prover, standardId, version)
-        require(!hasPassed[attestation.prover][attestation.standardId][attestation.version], "Already passed");
-        hasPassed[attestation.prover][attestation.standardId][attestation.version] = true;
+    if (record.result == PASS) {
+        // Check one PASS per (contender, trialId, version)
+        require(!hasPassed[record.contender][record.trialId][record.version], "Already passed");
+        hasPassed[record.contender][record.trialId][record.version] = true;
 
-        // Mint BBT
-        tokenId = bbt.mint(attestation.prover, attestation.standardId, attestation.version, ...);
+        // Mint Badge
+        tokenId = badge.mint(record.contender, record.trialId, record.version, ...);
 
-        // Distribute fees (creator royalty on PASS only)
-        _distributeFees(attestation.standardId, attestation.certifier, true);
+        // Distribute fees (architect royalty on PASS only)
+        _distributeFees(record.trialId, record.marshal, true);
     } else {
-        // NO_PASS: record attempt, no BBT
+        // NO_PASS: record Run, no Badge
         tokenId = 0;
 
-        // Certifier still gets fee for attempt
-        _distributeFees(attestation.standardId, attestation.certifier, false);
+        // Marshal still gets fee for Run
+        _distributeFees(record.trialId, record.marshal, false);
     }
 
-    emit AttestationRecorded(attestHash, attestation.prover, attestation.certifier, attestation.standardId, attestation.version, attestation.result);
-    if (attestation.result == PASS) {
-        emit BBTMinted(tokenId, attestation.prover, attestation.standardId, attestation.version);
+    emit RecordSubmitted(recordHash, record.contender, record.marshal, record.trialId, record.version, record.result);
+    if (record.result == PASS) {
+        emit BadgeMinted(tokenId, record.contender, record.trialId, record.version);
     }
 }
 ```
 
 **Events**:
 ```solidity
-event AttestationRecorded(
-    bytes32 indexed attestationHash,
-    address indexed prover,
-    address indexed certifier,
-    bytes32 standardId,
+event RecordSubmitted(
+    bytes32 indexed recordHash,
+    address indexed contender,
+    address indexed marshal,
+    bytes32 trialId,
     uint32 version,
     uint8 result
 );
-event BBTMinted(
+event BadgeMinted(
     uint256 indexed tokenId,
-    address indexed prover,
-    bytes32 indexed standardId,
+    address indexed contender,
+    bytes32 indexed trialId,
     uint32 version
 );
 ```
@@ -265,29 +267,29 @@ bytes32 constant DOMAIN_TYPEHASH = keccak256(
 // Domain: name="PoPW", version="1"
 ```
 
-**EIP-712 Attestation Type**:
+**EIP-712 Record Type**:
 ```solidity
-bytes32 constant ATTESTATION_TYPEHASH = keccak256(
-    "Attestation(bytes32 standardId,uint32 version,address prover,address certifier,uint8 result,uint64 timestamp,uint64 nonce,uint64 deadline,bytes32 toolId,bytes32 evidenceHash)"
+bytes32 constant RECORD_TYPEHASH = keccak256(
+    "Record(bytes32 trialId,uint32 version,address contender,address marshal,uint8 result,uint64 timestamp,uint64 nonce,uint64 deadline,bytes32 toolId,bytes32 evidenceHash)"
 );
 ```
 
 ---
 
-### 2.4 BBT.sol
+### 2.4 Badge.sol
 
-**Purpose**: Non-transferable Soul Bound Token for certifications. Does not expire (v1).
+**Purpose**: Non-transferable Soul Bound Token for credentials. Does not expire (v1).
 
 **Inheritance**: ERC-721 with transfer restrictions.
 
 **State Variables**:
 ```solidity
 struct TokenData {
-    bytes32 standardId;
+    bytes32 trialId;
     uint32 version;
-    address certifier;
+    address marshal;
     bytes32 evidenceHash;
-    uint256 certifiedAt;
+    uint256 earnedAt;
 }
 
 mapping(uint256 => TokenData) public tokenData;
@@ -298,9 +300,9 @@ uint256 private _tokenIdCounter;
 ```solidity
 function mint(
     address to,
-    bytes32 standardId,
+    bytes32 trialId,
     uint32 version,
-    address certifier,
+    address marshal,
     bytes32 evidenceHash
 ) external onlyPoPW returns (uint256 tokenId);
 
@@ -362,11 +364,11 @@ const domain = {
 };
 
 const types = {
-    Attestation: [
-        { name: "standardId", type: "bytes32" },
+    Record: [
+        { name: "trialId", type: "bytes32" },
         { name: "version", type: "uint32" },
-        { name: "prover", type: "address" },
-        { name: "certifier", type: "address" },
+        { name: "contender", type: "address" },
+        { name: "marshal", type: "address" },
         { name: "result", type: "uint8" },
         { name: "timestamp", type: "uint64" },
         { name: "nonce", type: "uint64" },
@@ -380,13 +382,13 @@ const types = {
 ### 3.2 Verification Flow
 
 1. Verify deadline has not expired
-2. Verify nonce matches prover's current nonce
-3. Reconstruct attestation hash using EIP-712
-4. Recover signer from prover signature
-5. Verify recovered address matches `attestation.prover`
-6. Recover signer from certifier signature
-7. Verify recovered address matches `attestation.certifier`
-8. Verify certifier is authorized at submission time via CertifierRegistry
+2. Verify nonce matches Contender's current nonce
+3. Reconstruct Record hash using EIP-712
+4. Recover signer from Contender signature
+5. Verify recovered address matches `record.contender`
+6. Recover signer from Marshal signature
+7. Verify recovered address matches `record.marshal`
+8. Verify Marshal is authorized at submission time via MarshalRegistry
 
 ---
 
@@ -395,34 +397,34 @@ const types = {
 ### 4.1 Flow
 
 ```
-Prover pays (baseFee in $EC or approved fee assets)
+Contender pays (baseFee in $EC or approved fee assets)
          │
-         ├──► Creator royalty (PASS only)
-         ├──► Certifier reward (per attempt)
+         ├──► Architect royalty (PASS only)
+         ├──► Marshal reward (per Run)
          └──► Protocol ops
 ```
 
 ### 4.2 Implementation
 
 ```solidity
-function _distributeFees(bytes32 standardId, address certifier, bool isPass) internal {
-    Standard memory std = standardsRegistry.getStandard(standardId);
-    uint256 fee = std.baseFee;
+function _distributeFees(bytes32 trialId, address marshal, bool isPass) internal {
+    Trial memory trial = trialsRegistry.getTrial(trialId);
+    uint256 fee = trial.baseFee;
 
-    // Certifier gets reward per attempt
-    uint256 certifierShare = (fee * CERTIFIER_BPS) / 10000;
-    ecToken.transfer(certifier, certifierShare);
+    // Marshal gets reward per Run
+    uint256 marshalShare = (fee * MARSHAL_BPS) / 10000;
+    ecToken.transfer(marshal, marshalShare);
 
     if (isPass) {
-        // Creator royalty only on PASS
-        uint256 creatorShare = (fee * std.royaltyBps) / 10000;
-        ecToken.transfer(std.creator, creatorShare);
+        // Architect royalty only on PASS
+        uint256 architectShare = (fee * trial.royaltyBps) / 10000;
+        ecToken.transfer(trial.architect, architectShare);
 
-        uint256 treasuryShare = fee - certifierShare - creatorShare;
+        uint256 treasuryShare = fee - marshalShare - architectShare;
         ecToken.transfer(treasury, treasuryShare);
     } else {
         // NO_PASS: remaining goes to treasury
-        uint256 treasuryShare = fee - certifierShare;
+        uint256 treasuryShare = fee - marshalShare;
         ecToken.transfer(treasury, treasuryShare);
     }
 }
@@ -439,7 +441,7 @@ Evidence files stored on IPFS or Arweave:
 - Witness statements
 - Metadata
 
-Media stays off-chain; recording requires mutual consent as defined by the Standard.
+Media stays off-chain; recording requires mutual consent as defined by the Trial.
 
 ### 5.2 On-Chain Reference
 
@@ -447,48 +449,48 @@ Media stays off-chain; recording requires mutual consent as defined by the Stand
 bytes32 evidenceHash = keccak256(abi.encodePacked(ipfsCid));
 ```
 
-Attestations may reference media by hash/pointer.
+Records may reference media by hash/pointer.
 
 ---
 
-## 6. Indexing & Leaderboards
+## 6. Indexing & Ladders
 
 ### 6.1 Subgraph Entities
 
 ```graphql
-type Certifier @entity {
+type Marshal @entity {
   id: ID!
   address: Bytes!
   isGenesis: Boolean!
   isActive: Boolean!
   vouches: [Vouch!]! @derivedFrom(field: "voucher")
-  certifications: [Certification!]! @derivedFrom(field: "certifier")
-  totalCertifications: BigInt!
+  runs: [Run!]! @derivedFrom(field: "marshal")
+  totalRuns: BigInt!
 }
 
-type Standard @entity {
+type Trial @entity {
   id: ID!
-  creator: Bytes!
+  architect: Bytes!
   latestVersion: Int!
-  versions: [StandardVersion!]! @derivedFrom(field: "standard")
-  certifications: [Certification!]! @derivedFrom(field: "standard")
-  totalCertifications: BigInt!
+  versions: [TrialVersion!]! @derivedFrom(field: "trial")
+  runs: [Run!]! @derivedFrom(field: "trial")
+  totalRuns: BigInt!
 }
 
-type StandardVersion @entity {
+type TrialVersion @entity {
   id: ID!
-  standard: Standard!
+  trial: Trial!
   version: Int!
   metadataHash: Bytes!
-  leaderboardEligible: Boolean!
+  ladderEligible: Boolean!
   createdAt: BigInt!
 }
 
-type Certification @entity {
+type Run @entity {
   id: ID!
-  prover: Bytes!
-  certifier: Certifier!
-  standard: Standard!
+  contender: Bytes!
+  marshal: Marshal!
+  trial: Trial!
   version: Int!
   tokenId: BigInt
   evidenceHash: Bytes!
@@ -497,37 +499,37 @@ type Certification @entity {
 }
 ```
 
-### 6.2 Leaderboards
+### 6.2 Ladders
 
-Per Standard version: rank verified PASS by the Standard's leaderboard rule.
+Per Trial version: rank verified PASS by the Trial's Ladder rule.
 
-Leaderboards apply only to versions marked `leaderboardEligible`.
+Ladders apply only to versions marked `ladderEligible`.
 
-Anomalous Certifier–Prover concentration may be excluded from leaderboard eligibility (monitoring).
+Anomalous Marshal–Contender concentration may be excluded from Ladder eligibility (monitoring).
 
 ---
 
 ## 7. Security Considerations
 
 ### 7.1 Replay Protection
-- Attestation includes nonce (per prover)
-- Attestation includes deadline (expiry)
-- Used attestations tracked in mapping
+- Record includes nonce (per Contender)
+- Record includes deadline (expiry)
+- Used Records tracked in mapping
 
 ### 7.2 Signature Malleability
 - Use OpenZeppelin ECDSA library
 - Reject malleable signatures
 
 ### 7.3 Access Control
-- Only PoPW can mint BBTs
+- Only PoPW can mint Badges
 - Only owner can initialize genesis keys
-- Only certifiers can vouch
-- Only Genesis Keys can revoke certifiers (v1 safety valve)
-- Rate limits enforced per certifier per standard per time window
+- Only Marshals can vouch
+- Only Genesis Keys can revoke Marshals (v1 safety valve)
+- Rate limits enforced per Marshal per Trial per time window
 
 ### 7.4 Authorization Timing
-- Certifier authorization checked at submission time
-- A revoked certifier cannot submit new attestations
+- Marshal authorization checked at submission time
+- A revoked Marshal cannot submit new Records
 
 ---
 
@@ -544,7 +546,7 @@ Anomalous Certifier–Prover concentration may be excluded from leaderboard elig
 
 Contracts designed for minimal upgradeability:
 - Registry contracts: Proxy pattern (optional)
-- BBT: Immutable
+- Badge: Immutable
 - EC: Immutable
 - PoPW: Versioned deployments
 
@@ -554,11 +556,11 @@ Contracts designed for minimal upgradeability:
 
 | Event | Contract |
 |-------|----------|
-| StandardRegistered | StandardsRegistry |
-| CertifierVouched | CertifierRegistry |
-| CertifierRevoked | CertifierRegistry |
-| AttestationRecorded | PoPW |
-| BBTMinted | PoPW |
+| TrialRegistered | TrialsRegistry |
+| MarshalVouched | MarshalRegistry |
+| MarshalRevoked | MarshalRegistry |
+| RecordSubmitted | PoPW |
+| BadgeMinted | PoPW |
 
 ---
 

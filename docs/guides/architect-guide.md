@@ -1,26 +1,28 @@
-# Creator Guide
-## Defining Certification Standards (v1.0.16)
+# Architect Guide
+## Defining Trials (v1.0.16)
+
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Ladder (rankings)
 
 ---
 
 ## Overview
 
-As a **Creator**, you define the Standards that Provers can achieve and Certifiers can verify. Standards are versioned and immutable once published.
+As an **Architect**, you define the Trials that Contenders can attempt and Marshals can verify. Trials are versioned and immutable once published.
 
 ---
 
-## What is a Standard?
+## What is a Trial?
 
-A Standard (standardId, version) specifies:
+A Trial (trialId, version) specifies:
 - **Tool spec**: equipment requirements
 - **Task**: what achievement is being certified
 - **Evidence requirements**: what proof is needed
 - **Pass rule**: criteria for PASS vs NO PASS
-- **Leaderboard rule**: how to rank verified PASS results
+- **Ladder rule**: how to rank verified PASS results
 
 ---
 
-## Creating a Standard
+## Creating a Trial
 
 ### Step 1: Define the Achievement
 
@@ -97,56 +99,56 @@ Define your royalty share (earned on PASS only):
 {
   "economics": {
     "base_fee_ec": 100,
-    "creator_royalty_bps": 2000
+    "architect_royalty_bps": 2000
   }
 }
 ```
 
 - `base_fee_ec`: Fee in $EC tokens
-- `creator_royalty_bps`: Your share in basis points (2000 = 20%), paid only on PASS
+- `architect_royalty_bps`: Your share in basis points (2000 = 20%), paid only on PASS
 
 ---
 
-## Submitting Your Standard
+## Submitting Your Trial
 
 ### 1. Validate Against Schema
 
 ```bash
-# Validate your standard JSON
-npx ajv validate -s standards/schema.json -d your-standard.json
+# Validate your Trial JSON
+npx ajv validate -s standards/schema.json -d your-trial.json
 ```
 
 ### 2. Compute Metadata Hash
 
-Hash your standard JSON for on-chain reference:
+Hash your Trial JSON for on-chain reference:
 
 ```javascript
-const metadataHash = keccak256(standardJsonBytes);
+const metadataHash = keccak256(trialJsonBytes);
 ```
 
 ### 3. Register On-Chain
 
-Call `StandardsRegistry.createStandard()`:
+Call `TrialsRegistry.createTrial()`:
 
 ```javascript
-const tx = await standardsRegistry.createStandard(
+const tx = await trialsRegistry.createTrial(
   metadataHash,                        // bytes32 metadata hash
   2000,                                // royaltyBps (20%)
   ethers.parseEther("100")             // baseFee in $EC
 );
-// Returns: standardId (bytes32)
+// Returns: trialId (bytes32)
 ```
 
 ---
 
 ## Adding New Versions
 
-Standards are versioned. Each version is immutable.
+Trials are versioned. Each version is immutable.
 
 ```javascript
-// Add a new version to an existing standard
-const tx = await standardsRegistry.addVersion(
-  standardId,      // existing standard ID
+// Add a new version to an existing Trial
+const tx = await trialsRegistry.addVersion(
+  trialId,         // existing Trial ID
   newMetadataHash  // hash of updated JSON
 );
 // Returns: version number (uint32)
@@ -154,32 +156,32 @@ const tx = await standardsRegistry.addVersion(
 
 ---
 
-## Leaderboard Eligibility
+## Ladder Eligibility
 
-The registry may mark a Standard version as **leaderboard-eligible**:
+The registry may mark a Trial version as **Ladder-eligible**:
 
 ```javascript
 // Only protocol governance can set this
-await standardsRegistry.setLeaderboardEligible(standardId, version, true);
+await trialsRegistry.setLadderEligible(trialId, version, true);
 ```
 
-Leaderboards rank verified PASS results by your Standard's leaderboard rule.
+Ladders rank verified PASS results by your Trial's Ladder rule.
 
 ---
 
 ## Best Practices
 
 ### Be Precise
-- Ambiguous standards lead to disputes
+- Ambiguous Trials lead to disputes
 - Specify exact measurements, durations, conditions
 
 ### Be Achievable
-- Standards should be challenging but attainable
+- Trials should be challenging but attainable
 - Consider progression paths (beginner → advanced)
 
 ### Be Verifiable
 - Evidence requirements must be practical for live observation
-- Consider what Certifiers can reasonably verify in real-time
+- Consider what Marshals can reasonably verify in real-time
 
 ### Consider Safety
 - Include safety requirements where appropriate
@@ -187,7 +189,7 @@ Leaderboards rank verified PASS results by your Standard's leaderboard rule.
 
 ---
 
-## Example Standards
+## Example Trials
 
 ### Physical Endurance
 - Sadhu board holds (various durations)
@@ -208,7 +210,7 @@ Leaderboards rank verified PASS results by your Standard's leaderboard rule.
 
 ## Royalty Economics
 
-Your earnings per PASS certification:
+Your earnings per PASS:
 
 ```
 Your Royalty = Base Fee × (Royalty BPS / 10000)
@@ -219,26 +221,26 @@ Example with 100 $EC base fee and 20% royalty:
 100 × (2000 / 10000) = 20 $EC per PASS
 ```
 
-Note: Creator royalty is only paid on PASS. NO PASS attempts do not generate creator royalty.
+Note: Architect royalty is only paid on PASS. NO PASS Runs do not generate Architect royalty.
 
 ---
 
-## Updating Standards
+## Updating Trials
 
 Versions are **immutable** once published. To update:
 
 1. Create a new version with `addVersion()`
 2. The new version gets an incremented version number
-3. Both versions remain valid; leaderboard eligibility is set per version
+3. Both versions remain valid; Ladder eligibility is set per version
 
 ---
 
 ## Support
 
 - Schema reference: `/standards/schema.json`
-- Example standards: `/standards/v1/`
+- Example Trials: `/standards/v1/`
 - Technical spec: `/docs/technical-spec.md`
 
 ---
 
-*Creator Guide v1.0.16*
+*Architect Guide v1.0.16*

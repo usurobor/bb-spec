@@ -5,7 +5,7 @@
 
 ## Goal
 
-Issue durable, non-transferable credentials for physical achievements verified by authorized Certifiers under shared Standards.
+Issue durable, non-transferable credentials for physical achievements verified by authorized Marshals under shared Trials.
 
 ---
 
@@ -20,9 +20,9 @@ Issue durable, non-transferable credentials for physical achievements verified b
 
 | Primitive | Description |
 |-----------|-------------|
-| **Standard** (standardId, version) | Tool spec, task, evidence requirements, pass rule, leaderboard rule |
-| **Attestation** | 2-of-2 signed attempt record (Prover + Certifier), PASS / NO PASS |
-| **Bodybound Token (BBT)** | Non-transferable SBT credential minted on PASS; does not expire (v1) |
+| **Trial** (trialId, version) | Tool spec, task, evidence requirements, pass rule, Ladder rule |
+| **Record** | 2-of-2 signed Run record (Contender + Marshal), PASS / NO PASS |
+| **Badge** | Non-transferable SBT credential minted on PASS; does not expire (v1) |
 | **$EC** | Fee / governance token |
 
 ---
@@ -31,61 +31,61 @@ Issue durable, non-transferable credentials for physical achievements verified b
 
 | Role | Description |
 |------|-------------|
-| **Creator** | Registers Standards; earns royalty per PASS mint |
-| **Prover** | Attempts; pays fee |
-| **Certifier** | Authorized; observes live; co-signs; earns fee |
-| **Genesis Keys** | Initial Certifiers; manage Certifier set in v1 |
+| **Architect** | Defines Trials; earns royalty per PASS mint |
+| **Contender** | Attempts Runs; pays fee |
+| **Marshal** | Authorized; observes live; co-signs; earns fee |
+| **Genesis Keys** | Initial Marshals; manage Marshal set in v1 |
 
 ---
 
 ## Registries (v1)
 
-### Standards Registry
-- Stores: creator, (standardId, version), metadata pointer/hash.
+### Trials Registry
+- Stores: architect, (trialId, version), metadata pointer/hash.
 - Versions are immutable.
-- Registry may mark a Standard version "leaderboard-eligible".
+- Registry may mark a Trial version "Ladder-eligible".
 
-### Certifier Registry
+### Marshal Registry
 - **Phase 1 (Genesis)**: Only Genesis Keys certify.
-- **Phase 2 (Expansion)**: Candidate becomes Certifier after 3 distinct Certifiers vouch on-chain.
-- **Revocation**: Genesis Keys may revoke Certifier status (v1 safety valve).
-- **Limits**: Registry may enforce rate limits per Certifier per Standard per time window.
-- **Monitoring**: Anomalous Certifier–Prover concentration may be excluded from leaderboard eligibility.
+- **Phase 2 (Expansion)**: Candidate becomes Marshal after 3 distinct Marshals vouch on-chain.
+- **Revocation**: Genesis Keys may revoke Marshal status (v1 safety valve).
+- **Limits**: Registry may enforce rate limits per Marshal per Trial per time window.
+- **Monitoring**: Anomalous Marshal–Contender concentration may be excluded from Ladder eligibility.
 
 ---
 
 ## Live Observation
 
-Co-located or live audio-video. Certifier may request camera/tool checks. Evidence follows the Standard.
+Co-located or live audio-video. Marshal may request camera/tool checks. Evidence follows the Trial.
 
 ---
 
 ## Flow
 
-1. Prover selects a Standard version and a tool matching its spec.
-2. Prover performs under live observation.
-3. Prover + Certifier sign one attestation in the app.
-4. Attestation submitted on-chain.
-   - **PASS**: mint BBT.
-   - **NO PASS**: record attempt; no BBT.
-5. Leaderboards rank verified PASS per Standard.
+1. Contender selects a Trial version and a tool matching its spec.
+2. Contender performs Run under live observation.
+3. Contender + Marshal sign one Record in the app.
+4. Record submitted on-chain.
+   - **PASS**: mint Badge.
+   - **NO PASS**: record Run; no Badge.
+5. Ladders rank verified PASS per Trial.
 
 ---
 
-## Attestation Schema (EIP-712)
+## Record Schema (EIP-712)
 
 **Domain**: `name="PoPW"`, `version="1"`, `chainId`, `verifyingContract`.
 
 **Message fields**:
 | Field | Description |
 |-------|-------------|
-| `standardId` | Standard identifier |
-| `version` | Standard version |
-| `prover` | Prover address |
-| `certifier` | Certifier address |
+| `trialId` | Trial identifier |
+| `version` | Trial version |
+| `contender` | Contender address |
+| `marshal` | Marshal address |
 | `result` | PASS=1, NO_PASS=0 |
-| `timestamp` | Attempt timestamp |
-| `nonce` | Per-prover nonce |
+| `timestamp` | Run timestamp |
+| `nonce` | Per-contender nonce |
 | `deadline` | Signature expiry |
 | `toolId` | Optional; 0x0 if unused |
 | `evidenceHash` | Optional; 0x0 if unused |
@@ -94,13 +94,13 @@ Co-located or live audio-video. Certifier may request camera/tool checks. Eviden
 
 ## Authorization Timing (v1)
 
-Certifier authorization is checked at submission time.
+Marshal authorization is checked at submission time.
 
 ---
 
 ## On-chain (minimum)
 
-Standard ID + version, Prover, Certifier, timestamp, PASS / NO PASS.
+Trial ID + version, Contender, Marshal, timestamp, PASS / NO PASS.
 
 **Optional**: toolId, evidence hash/pointer (off-chain).
 
@@ -110,23 +110,23 @@ Standard ID + version, Prover, Certifier, timestamp, PASS / NO PASS.
 
 Fees are paid in $EC or other protocol-approved fee assets.
 
-Fee split: certifier reward (per attempt), creator royalty (PASS only), protocol ops.
+Fee split: Marshal reward (per Run), Architect royalty (PASS only), protocol ops.
 
 ---
 
-## Leaderboards
+## Ladders
 
-Per Standard: rank verified PASS by the Standard leaderboard rule.
+Per Trial: rank verified PASS by the Trial's Ladder rule.
 
-Leaderboards apply to versions marked leaderboard-eligible.
+Ladders apply to versions marked Ladder-eligible.
 
 ---
 
 ## Privacy & Safety (v1)
 
-Recording is defined by the Standard and requires mutual consent.
+Recording is defined by the Trial and requires mutual consent.
 
-Media stays off-chain; attestations may reference media by hash/pointer.
+Media stays off-chain; Records may reference media by hash/pointer.
 
 ---
 
@@ -134,14 +134,14 @@ Media stays off-chain; attestations may reference media by hash/pointer.
 
 | Contract | Requirement |
 |----------|-------------|
-| **Certifier Registry** | Phases, vouching, revocation, rate limits |
-| **Standards Registry** | Creator + versioned metadata pointer/hash + leaderboard eligibility flag |
-| **Attest + Mint** | Verifies EIP-712 signatures, nonces, deadlines, registry authorization; records attestation; mints BBT on PASS |
-| **BBT** | Transfers and approvals disabled |
+| **Marshal Registry** | Phases, vouching, revocation, rate limits |
+| **Trials Registry** | Architect + versioned metadata pointer/hash + Ladder eligibility flag |
+| **Attest + Mint** | Verifies EIP-712 signatures, nonces, deadlines, registry authorization; records Run; mints Badge on PASS |
+| **Badge** | Transfers and approvals disabled |
 
-**Default**: one PASS per (prover, standardId, version).
+**Default**: one PASS per (contender, trialId, version).
 
-**Events**: StandardRegistered, CertifierVouched, CertifierRevoked, AttestationRecorded, BBTMinted.
+**Events**: TrialRegistered, MarshalVouched, MarshalRevoked, RecordSubmitted, BadgeMinted.
 
 ---
 
@@ -153,7 +153,7 @@ Trustless verification; anonymous proving; automated fraud detection; decentrali
 
 ## Future
 
-Multi-certifier attestations, staking, dispute flags, automated evidence checks.
+Multi-marshal Records, staking, dispute flags, automated evidence checks.
 
 ---
 
