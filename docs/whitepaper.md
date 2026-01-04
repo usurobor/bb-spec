@@ -1,4 +1,4 @@
-# Embodied Coherence (v1.0.15)
+# Embodied Coherence (v1.0.16)
 ## Proof of Physical Work (PoPW)
 
 ---
@@ -50,6 +50,7 @@ Issue durable, non-transferable credentials for physical achievements verified b
 - **Phase 2 (Expansion)**: Candidate becomes Certifier after 3 distinct Certifiers vouch on-chain.
 - **Revocation**: Genesis Keys may revoke Certifier status (v1 safety valve).
 - **Limits**: Registry may enforce rate limits per Certifier per Standard per time window.
+- **Monitoring**: Anomalous Certifier–Prover concentration may be excluded from leaderboard eligibility.
 
 ---
 
@@ -67,6 +68,7 @@ Co-located or live audio-video. Certifier may request camera/tool checks. Eviden
 4. Attestation submitted on-chain.
    - **PASS**: mint BBT.
    - **NO PASS**: record attempt; no BBT.
+5. Leaderboards rank verified PASS per Standard.
 
 ---
 
@@ -108,9 +110,7 @@ Standard ID + version, Prover, Certifier, timestamp, PASS / NO PASS.
 
 Fees are paid in $EC or other protocol-approved fee assets.
 
-Fee split: certifier reward, creator royalty (PASS only), protocol ops.
-
-*(Default: certifier reward applies per attempt.)*
+Fee split: certifier reward (per attempt), creator royalty (PASS only), protocol ops.
 
 ---
 
@@ -141,6 +141,8 @@ Media stays off-chain; attestations may reference media by hash/pointer.
 
 **Default**: one PASS per (prover, standardId, version).
 
+**Events**: StandardRegistered, CertifierVouched, CertifierRevoked, AttestationRecorded, BBTMinted.
+
 ---
 
 ## Out of Scope (v1)
@@ -161,4 +163,4 @@ GTO badges; WoW soulbound; POAP.
 
 ---
 
-*Version 1.0.15*
+*Version 1.0.16*

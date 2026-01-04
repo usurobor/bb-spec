@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.16] - 2026-01-04
+
+### Protocol Spec (Whitepaper)
+- Certifier Registry: added monitoring note (anomalous Certifier–Prover concentration excluded from leaderboards)
+- Flow: restored step 5 (Leaderboards rank verified PASS per Standard)
+- Economics: clarified certifier reward is per attempt
+- Contract Requirements: added required events list (StandardRegistered, CertifierVouched, CertifierRevoked, AttestationRecorded, BBTMinted)
+
+---
+
 ## [1.0.15] - 2026-01-04
 
 ### Protocol Spec (Whitepaper)
