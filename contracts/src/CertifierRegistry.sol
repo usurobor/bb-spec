@@ -14,6 +14,15 @@ contract CertifierRegistry is Ownable {
     uint256 public constant VOUCHES_REQUIRED = 3;
 
     /*//////////////////////////////////////////////////////////////
+                                 TYPES
+    //////////////////////////////////////////////////////////////*/
+
+    struct RateLimit {
+        uint64 windowSeconds;
+        uint32 maxAttestations;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                  STATE
     //////////////////////////////////////////////////////////////*/
 
@@ -24,6 +33,13 @@ contract CertifierRegistry is Ownable {
 
     uint256 public certifierCount;
 
+    /// @notice Rate limits per standard (bytes32(0) = global default)
+    mapping(bytes32 => RateLimit) public rateLimits;
+
+    /// @notice Attestation count per certifier per standard per window
+    /// @dev Key: keccak256(certifier, standardId, windowStart)
+    mapping(bytes32 => uint32) public attestationCounts;
+
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -33,6 +49,7 @@ contract CertifierRegistry is Ownable {
     event VouchRevoked(address indexed voucher, address indexed candidate);
     event CertifierAdmitted(address indexed certifier);
     event CertifierRevoked(address indexed certifier, address indexed revokedBy);
+    event RateLimitSet(bytes32 indexed standardId, uint64 windowSeconds, uint32 maxAttestations);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -46,6 +63,7 @@ contract CertifierRegistry is Ownable {
     error GenesisAlreadyInitialized();
     error NotGenesisKey();
     error CannotRevokeGenesisKey();
+    error RateLimitExceeded();
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -132,6 +150,95 @@ contract CertifierRegistry is Ownable {
         certifierCount--;
 
         emit CertifierRevoked(certifier, msg.sender);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          RATE LIMIT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Set rate limit for a standard (owner only)
+    /// @param standardId Standard ID (bytes32(0) for global default)
+    /// @param windowSeconds Time window in seconds
+    /// @param maxAttestations Max attestations per certifier per window
+    function setRateLimit(
+        bytes32 standardId,
+        uint64 windowSeconds,
+        uint32 maxAttestations
+    ) external onlyOwner {
+        rateLimits[standardId] = RateLimit({
+            windowSeconds: windowSeconds,
+            maxAttestations: maxAttestations
+        });
+
+        emit RateLimitSet(standardId, windowSeconds, maxAttestations);
+    }
+
+    /// @notice Record an attestation and check rate limit (called by PoPW)
+    /// @param certifier Certifier address
+    /// @param standardId Standard ID
+    /// @return allowed True if within rate limit
+    function recordAttestation(
+        address certifier,
+        bytes32 standardId
+    ) external returns (bool allowed) {
+        if (!isCertifier[certifier]) revert NotCertifier();
+
+        // Get rate limit (standard-specific or global default)
+        RateLimit memory limit = rateLimits[standardId];
+        if (limit.windowSeconds == 0) {
+            limit = rateLimits[bytes32(0)]; // global default
+        }
+
+        // No rate limit configured
+        if (limit.windowSeconds == 0 || limit.maxAttestations == 0) {
+            return true;
+        }
+
+        // Calculate window start
+        uint64 windowStart = uint64(block.timestamp / limit.windowSeconds) * limit.windowSeconds;
+        bytes32 key = keccak256(abi.encodePacked(certifier, standardId, windowStart));
+
+        // Check and increment
+        uint32 count = attestationCounts[key];
+        if (count >= limit.maxAttestations) {
+            revert RateLimitExceeded();
+        }
+
+        attestationCounts[key] = count + 1;
+        return true;
+    }
+
+    /// @notice Check if a certifier can attest (view only, doesn't record)
+    /// @param certifier Certifier address
+    /// @param standardId Standard ID
+    /// @return canAttest True if within rate limit
+    /// @return remaining Remaining attestations in current window
+    function checkRateLimit(
+        address certifier,
+        bytes32 standardId
+    ) external view returns (bool canAttest, uint32 remaining) {
+        if (!isCertifier[certifier]) {
+            return (false, 0);
+        }
+
+        RateLimit memory limit = rateLimits[standardId];
+        if (limit.windowSeconds == 0) {
+            limit = rateLimits[bytes32(0)];
+        }
+
+        if (limit.windowSeconds == 0 || limit.maxAttestations == 0) {
+            return (true, type(uint32).max);
+        }
+
+        uint64 windowStart = uint64(block.timestamp / limit.windowSeconds) * limit.windowSeconds;
+        bytes32 key = keccak256(abi.encodePacked(certifier, standardId, windowStart));
+        uint32 count = attestationCounts[key];
+
+        if (count >= limit.maxAttestations) {
+            return (false, 0);
+        }
+
+        return (true, limit.maxAttestations - count);
     }
 
     /*//////////////////////////////////////////////////////////////

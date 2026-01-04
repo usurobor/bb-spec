@@ -14,7 +14,7 @@ import {BBT} from "./BBT.sol";
 
 /// @title PoPW (Proof of Physical Work)
 /// @notice Core attestation and minting contract for Embodied Coherence
-/// @dev Verifies 2-of-2 signatures and triggers BBT minting
+/// @dev Verifies 2-of-2 signatures, tracks nonces, enforces deadlines, mints BBT on PASS
 contract PoPW is EIP712, Ownable {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
@@ -31,18 +31,28 @@ contract PoPW is EIP712, Ownable {
     address public treasury;
     uint256 public treasuryBps = 1500; // 15% default
 
+    /// @notice Nonce per prover (for replay protection)
+    mapping(address => uint64) public nonces;
+
+    /// @notice Track used attestation hashes
     mapping(bytes32 => bool) public usedAttestations;
+
+    /// @notice Track if prover has PASS for (standardId, version)
+    /// @dev Key: keccak256(prover, standardId, version)
+    mapping(bytes32 => bool) public hasPass;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event AttestationSubmitted(
+    event AttestationRecorded(
         bytes32 indexed attestationHash,
         address indexed prover,
         address indexed certifier,
         bytes32 standardId,
-        uint256 tokenId
+        uint32 version,
+        uint8 result,
+        uint256 tokenId // 0 if NO_PASS
     );
 
     event TreasuryUpdated(address indexed newTreasury);
@@ -56,9 +66,13 @@ contract PoPW is EIP712, Ownable {
     error InvalidCertifierSignature();
     error CertifierNotAuthorized();
     error AttestationAlreadyUsed();
-    error StandardNotActive();
+    error VersionNotFound();
     error InvalidTimestamp();
     error ProverCertifierSame();
+    error DeadlineExpired();
+    error InvalidNonce();
+    error AlreadyHasPass();
+    error InvalidResult();
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -70,7 +84,7 @@ contract PoPW is EIP712, Ownable {
         address _bbt,
         address _ecToken,
         address _treasury
-    ) EIP712("Embodied Coherence", "1") Ownable(msg.sender) {
+    ) EIP712("PoPW", "1") Ownable(msg.sender) {
         certifierRegistry = CertifierRegistry(_certifierRegistry);
         standardsRegistry = StandardsRegistry(_standardsRegistry);
         bbt = BBT(_bbt);
@@ -82,11 +96,11 @@ contract PoPW is EIP712, Ownable {
                           EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Submit an attestation to mint a BBT
+    /// @notice Submit an attestation
     /// @param attestation The attestation data
     /// @param proverSig Prover's EIP-712 signature
     /// @param certifierSig Certifier's EIP-712 signature
-    /// @return tokenId The minted BBT token ID
+    /// @return tokenId The minted BBT token ID (0 if NO_PASS)
     function attest(
         Attestation.Data calldata attestation,
         bytes calldata proverSig,
@@ -104,26 +118,44 @@ contract PoPW is EIP712, Ownable {
         // Verify signatures
         _verifySignatures(attestation, attestationHash, proverSig, certifierSig);
 
+        // Validate and consume nonce
+        if (attestation.nonce != nonces[attestation.prover]) revert InvalidNonce();
+        nonces[attestation.prover]++;
+
         // Mark as used
         usedAttestations[attestationHash] = true;
 
-        // Handle fees
-        _handleFees(attestation.standardId, attestation.certifier);
+        // Record in certifier registry (rate limiting)
+        certifierRegistry.recordAttestation(attestation.certifier, attestation.standardId);
 
-        // Mint BBT
-        tokenId = bbt.mint(
-            attestation.prover,
-            attestation.standardId,
-            attestation.certifier,
-            attestation.evidenceHash,
-            attestation.score
-        );
+        // Handle fees (certifier always gets fee, creator only on PASS)
+        _handleFees(attestation);
 
-        emit AttestationSubmitted(
+        // If PASS, mint BBT
+        if (Attestation.isPassed(attestation)) {
+            // Check one PASS per (prover, standardId, version)
+            bytes32 passKey = keccak256(
+                abi.encodePacked(attestation.prover, attestation.standardId, attestation.version)
+            );
+            if (hasPass[passKey]) revert AlreadyHasPass();
+            hasPass[passKey] = true;
+
+            tokenId = bbt.mint(
+                attestation.prover,
+                attestation.standardId,
+                attestation.certifier,
+                attestation.evidenceHash,
+                uint256(attestation.version)
+            );
+        }
+
+        emit AttestationRecorded(
             attestationHash,
             attestation.prover,
             attestation.certifier,
             attestation.standardId,
+            attestation.version,
+            attestation.result,
             tokenId
         );
     }
@@ -162,6 +194,27 @@ contract PoPW is EIP712, Ownable {
         return _getAttestationDigest(attestation);
     }
 
+    /// @notice Get current nonce for a prover
+    /// @param prover Prover address
+    /// @return Current nonce
+    function getNonce(address prover) external view returns (uint64) {
+        return nonces[prover];
+    }
+
+    /// @notice Check if prover has PASS for a standard version
+    /// @param prover Prover address
+    /// @param standardId Standard ID
+    /// @param version Version number
+    /// @return True if has PASS
+    function hasPassFor(
+        address prover,
+        bytes32 standardId,
+        uint32 version
+    ) external view returns (bool) {
+        bytes32 passKey = keccak256(abi.encodePacked(prover, standardId, version));
+        return hasPass[passKey];
+    }
+
     /// @notice Verify signatures without submitting
     /// @param attestation The attestation data
     /// @param proverSig Prover's signature
@@ -188,14 +241,20 @@ contract PoPW is EIP712, Ownable {
         // Prover and certifier must be different
         if (attestation.prover == attestation.certifier) revert ProverCertifierSame();
 
-        // Certifier must be authorized
+        // Result must be valid (0 or 1)
+        if (attestation.result > Attestation.PASS) revert InvalidResult();
+
+        // Deadline must not be expired
+        if (block.timestamp > attestation.deadline) revert DeadlineExpired();
+
+        // Certifier must be authorized (checked at submission time per spec)
         if (!certifierRegistry.isCertifier(attestation.certifier)) {
             revert CertifierNotAuthorized();
         }
 
-        // Standard must be active
-        if (!standardsRegistry.isActiveStandard(attestation.standardId)) {
-            revert StandardNotActive();
+        // Version must exist
+        if (!standardsRegistry.isValidVersion(attestation.standardId, attestation.version)) {
+            revert VersionNotFound();
         }
 
         // Timestamp must be reasonable (not in future, not too old)
@@ -226,8 +285,11 @@ contract PoPW is EIP712, Ownable {
         return _hashTypedDataV4(Attestation.hash(attestation));
     }
 
-    function _handleFees(bytes32 standardId, address certifier) internal {
-        StandardsRegistry.Standard memory std = standardsRegistry.getStandard(standardId);
+    function _handleFees(Attestation.Data calldata attestation) internal {
+        StandardsRegistry.StandardVersion memory std = standardsRegistry.getVersion(
+            attestation.standardId,
+            attestation.version
+        );
 
         if (std.baseFee == 0) return;
 
@@ -235,7 +297,10 @@ contract PoPW is EIP712, Ownable {
         ecToken.safeTransferFrom(msg.sender, address(this), std.baseFee);
 
         // Calculate splits
-        uint256 creatorShare = (std.baseFee * std.royaltyBps) / 10000;
+        // Creator royalty only on PASS
+        uint256 creatorShare = Attestation.isPassed(attestation)
+            ? (std.baseFee * std.royaltyBps) / 10000
+            : 0;
         uint256 treasuryShare = (std.baseFee * treasuryBps) / 10000;
         uint256 certifierShare = std.baseFee - creatorShare - treasuryShare;
 
@@ -247,7 +312,7 @@ contract PoPW is EIP712, Ownable {
             ecToken.safeTransfer(treasury, treasuryShare);
         }
         if (certifierShare > 0) {
-            ecToken.safeTransfer(certifier, certifierShare);
+            ecToken.safeTransfer(attestation.certifier, certifierShare);
         }
     }
 }

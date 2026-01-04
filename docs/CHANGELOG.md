@@ -7,6 +7,27 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.15] - 2026-01-04
+
+### Protocol Spec (Whitepaper)
+- New "Registries (v1)" section with Standards Registry and Certifier Registry details
+- Standards Registry: versioned standards, immutable versions, leaderboard-eligible flag
+- Certifier Registry: rate limits per Certifier per Standard per time window
+- New "Attestation Schema (EIP-712)" section with full field spec
+- Attestation fields: standardId, version, prover, certifier, result, timestamp, nonce, deadline, toolId, evidenceHash
+- New "Authorization Timing (v1)" section
+- New "Privacy & Safety (v1)" section
+- Economics: fees in $EC or protocol-approved assets; creator royalty on PASS only
+- Default: one PASS per (prover, standardId, version)
+
+### Contracts
+- Attestation.sol — Full EIP-712 schema with nonce, deadline, result, version
+- StandardsRegistry.sol — Versioned standards with leaderboard eligibility
+- CertifierRegistry.sol — Rate limits per Certifier/Standard/window
+- PoPW.sol — Nonce tracking, deadline validation, NO_PASS recording
+
+---
+
 ## [1.0.14] - 2026-01-04
 
 ### Protocol Spec (Whitepaper)
@@ -52,8 +73,5 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### TODO
-- [ ] 2-of-2 signature verification in PoPW.sol
-- [ ] Fee splitting logic ($EC)
-- [ ] Evidence hash/pointer support
 - [ ] Leaderboard indexing
 - [ ] Frontend certification flow
