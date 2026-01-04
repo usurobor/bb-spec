@@ -19,9 +19,9 @@
 **Embodied Coherence: Decentralized certification for physical achievements.**
 
 A protocol where:
-- Trusted practitioners verify real-world feats
+- Trusted practitioners verify real-world feats under live observation
 - Non-transferable tokens prove accomplishment
-- Standards are community-defined and open
+- Standards are versioned, immutable, and community-defined
 - Trust propagates through vouching networks
 
 ---
@@ -29,13 +29,14 @@ A protocol where:
 ## How It Works
 
 ```
-Prover → Performs Feat → Certifier Verifies → BBT Minted
+1. Select Standard → 2. Perform Live → 3. Co-sign → 4. On-chain → 5. Leaderboard
 ```
 
-1. **Prover** selects a Standard (e.g., "1-minute sadhu board hold")
-2. **Prover** performs the feat with evidence
-3. **Certifier** reviews and co-signs attestation
-4. **BBT** (Body Bound Token) minted as proof
+1. **Prover** selects a Standard version and matching tool
+2. **Prover** performs under live observation (co-located or video)
+3. **Prover + Certifier** co-sign attestation (2-of-2)
+4. **On-chain**: PASS mints BBT; NO PASS records attempt
+5. **Leaderboards** rank verified PASS per Standard
 
 ---
 
@@ -43,10 +44,10 @@ Prover → Performs Feat → Certifier Verifies → BBT Minted
 
 | Primitive | Description |
 |-----------|-------------|
-| **BBT** | Non-transferable Soul Bound Token |
+| **Standard** (id, version) | Tool spec, task, evidence requirements, pass rule, leaderboard rule |
+| **Attestation** | 2-of-2 signed record with PASS / NO PASS result |
+| **BBT** | Non-transferable Soul Bound Token (does not expire) |
 | **$EC** | Fee and governance token |
-| **Standard** | JSON definition of achievement |
-| **Attestation** | 2-of-2 signed proof |
 
 ---
 
@@ -61,42 +62,54 @@ Prover → Performs Feat → Certifier Verifies → BBT Minted
 
 ## Business Model
 
-**Fee Distribution per Certification:**
+**Fee Distribution per Attempt:**
 
-| Recipient | Share |
-|-----------|-------|
-| Certifier | 50-70% |
-| Creator (Standard author) | 10-30% |
-| Protocol Treasury | 10-20% |
+| Recipient | Share | When |
+|-----------|-------|------|
+| Certifier | 50-70% | Every attempt |
+| Creator | 10-30% | PASS only |
+| Protocol | 10-20% | Every attempt |
 
 ---
 
 ## Trust Model
 
-### Genesis → Vouch Expansion
+### Genesis → Vouch → Monitor
 
-1. **Genesis Keys**: Curated initial Certifiers
-2. **3-Vouch Rule**: New Certifiers need 3 existing vouches
-3. **Reputation**: On-chain leaderboards track performance
+1. **Genesis Keys**: Curated initial Certifiers; manage Certifier set
+2. **3-Vouch Rule**: New Certifiers admitted after 3 on-chain vouches
+3. **Revocation**: Genesis Keys can revoke (v1 safety valve)
+4. **Rate Limits**: Per Certifier, per Standard, per time window
+5. **Monitoring**: Anomalous Certifier–Prover concentration excluded from leaderboards
+
+---
+
+## Technical Highlights
+
+- **EIP-712 Attestations**: Typed signatures with nonce, deadline, result
+- **Versioned Standards**: Immutable once published; leaderboard eligibility flag
+- **Privacy**: Media stays off-chain; attestations reference by hash
+- **One PASS Rule**: One PASS per (prover, standardId, version)
 
 ---
 
 ## Traction & Roadmap
 
-### Now (v1.0)
+### Now (v1.0.16)
 - Protocol specification complete
-- Smart contracts scaffolded
+- Smart contracts implemented (Foundry)
 - 4 launch Standards defined
+- EIP-712 attestation schema finalized
 
 ### Next
 - Testnet deployment
-- Mobile evidence SDK
-- Community Standard creation
+- Contract audit
+- Mobile certification app
 
 ### Future
-- Cross-chain expansion
-- DAO governance
-- Enterprise integrations
+- Multi-certifier attestations
+- Staking & dispute flags
+- Automated evidence checks
 
 ---
 
@@ -111,7 +124,7 @@ Building at the intersection of embodied practice and decentralized systems.
 **Seed Round: Building the certification layer for physical achievement.**
 
 - Smart contract audit
-- Mobile SDK development
+- Mobile app development
 - Community growth
 - Initial Certifier network
 
