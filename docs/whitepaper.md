@@ -1,217 +1,100 @@
-# Embodied Coherence Protocol
-## Whitepaper v1.0
+# Embodied Coherence (v1.0.13)
+## Proof of Physical Work (PoPW)
 
 ---
 
-## Abstract
+## Goal
 
-Embodied Coherence is a decentralized protocol for certifying physical achievements through Proof-of-Physical-Work (PoPW). The protocol enables trust propagation from established practitioners to emerging ones, creating verifiable on-chain records of embodied accomplishments via non-transferable Soul Bound Tokens.
-
----
-
-## 1. Goal
-
-Create a permissionless, trust-minimized system for certifying physical achievements that:
-- Preserves the integrity of embodied practice lineages
-- Provides verifiable, non-transferable proof of accomplishment
-- Incentivizes quality certification through economic alignment
+Issue durable, non-transferable credentials for physical achievements verified by authorized Certifiers under shared Standards.
 
 ---
 
-## 2. Motivation
+## Motivation
 
-Physical mastery—whether in martial arts, yoga, athletics, or craftsmanship—has historically relied on in-person verification and lineage-based trust. This creates:
-- **Fragmentation**: No universal verification standard
-- **Fraud**: Easy to claim false credentials
-- **Gatekeeping**: Centralized certification bodies with misaligned incentives
-
-Embodied Coherence addresses these by creating an open, verifiable certification layer.
+- Portable proof of physical achievement.
+- Comparable results under common rules.
 
 ---
 
-## 3. Primitives
+## Primitives
 
-### 3.1 Body Bound Token (BBT)
-- Non-transferable ERC-721 (Soul Bound Token)
-- Represents a certified physical achievement
-- Linked to a specific Standard and Certifier
-
-### 3.2 $EC Token
-- ERC-20 fee and governance token
-- Used for certification fees
-- Governs protocol parameters
-
-### 3.3 Standard
-- JSON definition of a certifiable achievement
-- Includes: name, description, requirements, evidence schema, royalty parameters
-- Versioned and immutable once published
-
-### 3.4 Attestation
-- EIP-712 typed data structure
-- Co-signed by Prover and Certifier
-- Contains: standard ID, evidence hash, timestamp, scores
+| Primitive | Description |
+|-----------|-------------|
+| **Standard** (ID, version) | Tool spec, task, pass rule, leaderboard rule |
+| **Attestation** | 2-of-2 signed attempt record (Prover + Certifier) |
+| **Bodybound Token (BBT)** | Non-transferable SBT credential minted on PASS |
+| **$EC** | Fee / governance token |
 
 ---
 
-## 4. Roles
+## Roles
 
-### 4.1 Creator
-- Defines certification Standards
-- Sets royalty parameters
-- Receives royalties on certifications using their Standard
-
-### 4.2 Prover
-- Performs physical feats
-- Submits evidence
-- Requests certification from Certifiers
-- Receives BBT upon successful certification
-
-### 4.3 Certifier
-- Authorized to verify physical achievements
-- Co-signs attestations with Provers
-- Earns fees for certifications
-- Reputation tracked via leaderboards
+| Role | Description |
+|------|-------------|
+| **Creator** | Registers Standards; earns royalty per mint |
+| **Prover** | Attempts; pays fee |
+| **Certifier** | Authorized; observes live; co-signs; earns fee |
+| **Genesis Keys** | Initial Certifiers; control Certifier admission in v1 |
 
 ---
 
-## 5. Certifier Authorization
+## Certifier Authorization (v1)
 
-### 5.1 Genesis Keys
-Initial set of trusted Certifiers established at protocol launch:
-- Selected for demonstrated expertise and community standing
-- Bootstrap trust network
-- Can vouch for new Certifiers
-
-### 5.2 3-Vouch Expansion
-New Certifiers admitted via vouching:
-- Requires 3 existing Certifier vouches
-- Vouchers stake reputation
-- Creates web-of-trust expansion
+- **Phase 1 (Genesis)**: Only Genesis Keys may act as Certifiers.
+- **Phase 2 (Expansion)**: Candidate becomes Certifier after 3 distinct Certifiers vouch on-chain.
 
 ---
 
-## 6. Certification Flow
+## Live Observation
 
-```
-1. Prover selects Standard
-2. Prover performs feat with evidence capture
-3. Prover requests certification from Certifier
-4. Certifier reviews evidence
-5. Certifier signs attestation
-6. Prover co-signs attestation
-7. Submit to PoPW contract
-8. BBT minted to Prover
-9. Fees distributed ($EC)
-```
+Co-located or live audio-video. Certifier may request camera/tool checks.
 
 ---
 
-## 7. On-Chain Fields
+## Flow
 
-### Attestation Structure
-```solidity
-struct Attestation {
-    address prover;
-    address certifier;
-    bytes32 standardId;
-    bytes32 evidenceHash;
-    uint256 timestamp;
-    uint256 score;
-    bytes proverSig;
-    bytes certifierSig;
-}
-```
-
-### BBT Metadata
-- Standard ID
-- Certifier address
-- Certification timestamp
-- Evidence pointer (IPFS/Arweave)
-- Score (if applicable)
+1. Prover selects a Standard and a tool matching its spec.
+2. Prover performs live with a Certifier.
+3. Prover + Certifier sign one attestation in the app.
+4. Attestation recorded on-chain; PASS mints BBT.
 
 ---
 
-## 8. Economics
+## On-chain (minimum)
 
-### 8.1 Fee Structure
-- Base certification fee: Set per Standard
-- Distribution:
-  - Creator royalty: 10-30% (set by Creator)
-  - Certifier fee: 50-70%
-  - Protocol treasury: 10-20%
+Standard ID + version, Prover, Certifier, timestamp, PASS / NO PASS.
 
-### 8.2 $EC Utility
-- Pay certification fees
-- Governance voting
-- Certifier staking (future)
+**Optional**: tool ID, evidence hash/pointer (off-chain).
 
 ---
 
-## 9. Leaderboards
+## Economics
 
-Track and display:
-- Top Certifiers by certification count
-- Top Certifiers by Standard
-- Top Provers by achievement count
-- Standard popularity rankings
-
-Indexed off-chain, verifiable on-chain.
+$EC fees split: certifier reward, creator royalty, protocol ops.
 
 ---
 
-## 10. Contract Requirements
+## Leaderboards
 
-### CertifierRegistry.sol
-- Genesis key initialization
-- 3-vouch admission logic
-- Certifier status tracking
-
-### StandardsRegistry.sol
-- Standard creation and storage
-- Royalty parameter management
-- Version tracking
-
-### PoPW.sol
-- Attestation verification
-- 2-of-2 signature validation
-- BBT minting trigger
-- Fee distribution
-
-### BBT.sol
-- ERC-721 with transfer restrictions
-- Metadata storage
-- Burn capability (self-only)
-
-### EC.sol
-- Standard ERC-20
-- Initial distribution
-- Governance integration (future)
+Per Standard: rank verified passes by the Standard's leaderboard rule.
 
 ---
 
-## 11. Precedents
+## Contract Requirements (v1)
 
-- **EAS (Ethereum Attestation Service)**: Attestation patterns
-- **Lens Protocol**: Social graph primitives
-- **Gitcoin Passport**: Sybil resistance via stamps
-- **POAP**: Event attendance tokens
-
----
-
-## 12. Future Work
-
-- Multi-certifier requirements for advanced Standards
-- Certifier staking and slashing
-- Cross-chain certification bridging
-- DAO governance implementation
-- Mobile evidence capture SDK
+| Contract | Requirement |
+|----------|-------------|
+| **Certifier Registry** | Gates who can certify; enforces Genesis phase + 3-vouch admission |
+| **Attest + Mint** | Rejects attestations unless Certifier is authorized in registry |
+| **Attestation** | One shared message signed by both parties (2-of-2) |
+| **BBT** | Non-transferable (transfers/approvals disabled) |
 
 ---
 
-## Appendix A: Standard Schema
+## Precedents
 
-See `/standards/schema.json` for the full JSON schema definition.
+GTO badges; WoW soulbound; POAP.
 
 ---
 
-*Version 1.0 — January 2026*
+*Version 1.0.13*
