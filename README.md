@@ -1,6 +1,6 @@
 # Embodied Coherence Protocol
 
-**Proof-of-Physical-Work (PoPW) certification system for embodied achievements.**
+**Proof-of-Physical-Work (PoPW) — Live-observed certification for physical achievements.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -8,15 +8,42 @@
 
 ## Overview
 
-Embodied Coherence is a decentralized protocol for certifying physical achievements and embodied practices. Certified practitioners ("Certifiers") verify real-world feats performed by "Provers," issuing non-transferable Soul Bound Tokens (BBT) as on-chain proof.
+Embodied Coherence is a protocol that issues non-transferable credentials for physical achievements verified by authorized Certifiers under shared Standards.
 
 ### Key Features
 
-- **Proof-of-Physical-Work (PoPW)** — Attestation-based verification of embodied achievements
-- **Body Bound Tokens (BBT)** — Non-transferable SBTs representing certified accomplishments
-- **Certifier Network** — Genesis Keys + 3-vouch expansion model for trust propagation
-- **Standards Registry** — Versioned, community-defined certification standards
-- **$EC Token** — Fee and governance token for protocol economics
+- **Proof-of-Physical-Work (PoPW)** — Live-observed, 2-of-2 signed attestations (Prover + Certifier)
+- **Body Bound Tokens (BBT)** — Non-transferable SBTs minted on PASS; do not expire (v1)
+- **Versioned Standards** — Immutable (standardId, version) definitions with leaderboard eligibility
+- **Certifier Network** — Genesis Keys + 3-vouch expansion + revocation (v1 safety valve)
+- **$EC Token** — Fee and governance token (other fee assets may be approved)
+
+---
+
+## Protocol Roles
+
+| Role | Description |
+|------|-------------|
+| **Creator** | Registers Standards; earns royalty per PASS mint |
+| **Prover** | Attempts; pays fee |
+| **Certifier** | Authorized; observes live; co-signs; earns fee per attempt |
+| **Genesis Keys** | Initial Certifiers; manage Certifier set in v1 |
+
+---
+
+## How It Works
+
+```
+1) Select Standard → 2) Observe Live → 3) Co-sign → 4) On-chain → 5) Leaderboard
+```
+
+1. Prover selects **(standardId, version)** and uses a tool matching the spec
+2. Prover performs under **live observation** (co-located or video)
+3. Prover + Certifier co-sign one attestation (2-of-2)
+4. Attestation recorded on-chain
+   - **PASS**: mint BBT
+   - **NO PASS**: record attempt; no BBT
+5. Leaderboards rank **verified PASS** per standard (eligible versions only)
 
 ---
 
@@ -25,7 +52,7 @@ Embodied Coherence is a decentralized protocol for certifying physical achieveme
 ```
 bodybound/
 ├── docs/                  # Protocol documentation
-│   ├── whitepaper.md      # Full protocol specification
+│   ├── whitepaper.md      # Full protocol specification (v1.0.16)
 │   ├── CHANGELOG.md       # Version history
 │   ├── pitch-deck.md      # Investor/community pitch
 │   ├── technical-spec.md  # Technical implementation details
@@ -66,19 +93,24 @@ forge test
 
 ---
 
-## Protocol Roles
+## Trust Model (v1)
 
-| Role | Description |
-|------|-------------|
-| **Creator** | Defines certification standards (e.g., "1-minute sadhu board hold") |
-| **Prover** | Performs physical feats and requests certification |
-| **Certifier** | Verifies proofs and co-signs attestations |
+PoPW v1 is **permissioned** by design.
+
+**Certifier Authorization**
+- **Phase 1 (Genesis):** only Genesis Keys certify
+- **Phase 2 (Expansion):** candidate becomes certifier after **3 on-chain vouches**
+- **Revocation:** Genesis Keys may revoke certifier status (v1 safety valve)
+
+**Integrity Controls**
+- Rate limits: per certifier, per standard, per time window
+- Monitoring: anomalous certifier–prover concentration may be excluded from leaderboards
 
 ---
 
 ## Documentation
 
-- [Whitepaper](docs/whitepaper.md) — Full protocol specification
+- [Whitepaper](docs/whitepaper.md) — Full protocol specification (v1.0.16)
 - [Technical Spec](docs/technical-spec.md) — Implementation details
 - [Creator Guide](docs/guides/creator-guide.md) — How to create standards
 - [Prover Guide](docs/guides/prover-guide.md) — How to get certified

@@ -1,11 +1,11 @@
 # Prover Guide
-## Getting Certified for Physical Achievements
+## Getting Certified for Physical Achievements (v1.0.16)
 
 ---
 
 ## Overview
 
-As a **Prover**, you perform physical feats and receive verifiable on-chain certification. Your achievements are recorded as non-transferable Body Bound Tokens (BBTs).
+As a **Prover**, you perform physical feats under **live observation** and receive verifiable on-chain certification. Your achievements are recorded as non-transferable Body Bound Tokens (BBTs) on PASS, or as attempt records on NO PASS.
 
 ---
 
@@ -15,67 +15,62 @@ As a **Prover**, you perform physical feats and receive verifiable on-chain cert
 
 1. **Wallet**: Ethereum-compatible wallet (MetaMask, Rainbow, etc.)
 2. **$EC Tokens**: For certification fees
-3. **Evidence Capture**: Camera/phone for recording
+3. **Evidence Capture**: Camera/phone for live observation recording
 
 ---
 
 ## Certification Flow
 
 ```
-1. Choose Standard → 2. Prepare → 3. Perform & Record → 4. Find Certifier → 5. Submit → 6. Receive BBT
+1) Select Standard → 2) Observe Live → 3) Co-sign → 4) On-chain → 5) Leaderboard
 ```
 
 ---
 
-## Step 1: Choose a Standard
+## Step 1: Select a Standard
 
 Browse available Standards in the registry:
 
 ```javascript
-// Get all active standards
-const standards = await standardsRegistry.getActiveStandards();
+// Get a standard by ID and version
+const standard = await standardsRegistry.getStandard(standardId);
+const version = await standardsRegistry.getVersion(standardId, versionNum);
 ```
 
 Consider:
-- **Difficulty**: Match your current ability
-- **Requirements**: Ensure you have necessary equipment
+- **Standard version**: Select a specific (standardId, version)
+- **Requirements**: Ensure you have matching equipment (tool spec)
 - **Fee**: Check the certification cost
+- **Leaderboard eligibility**: Check if version is eligible for rankings
 
 ---
 
-## Step 2: Prepare
+## Step 2: Live Observation
 
-### Review Requirements
+Certification requires **live observation** by an authorized Certifier.
 
-Each Standard specifies exact requirements:
-- Duration
-- Equipment specifications
-- Position/form requirements
-- Evidence requirements
+### Observation Methods
+- **Co-located**: Certifier present in person
+- **Live video**: Real-time audio-video call
 
-### Gather Equipment
-
-Ensure all equipment meets Standard specifications:
-- Correct dimensions/weights
-- Proper setup
-- Safety measures
-
-### Set Up Recording
+### Recording Requirements
+Recording is defined by the Standard and requires **mutual consent**.
 
 Evidence requirements typically include:
 - Continuous video (no cuts)
 - Clear view of the activity
 - Visible timer/clock
-- Equipment detail shots
+- Equipment detail matching tool spec
+- Full body visible throughout
 
 ---
 
-## Step 3: Perform & Record
+## Step 3: Perform the Attempt
 
-### Recording Tips
+### During Live Observation
 
-1. **Start early**: Begin recording before you start
-2. **Show setup**: Capture equipment details
+1. **Start recording** before you begin
+2. **Show setup**: Capture equipment details matching Standard spec
 3. **Stay in frame**: Full body visible throughout
 4. **Include timer**: Visible countdown/stopwatch
 5. **Continue after**: Record a few seconds past completion
@@ -90,60 +85,38 @@ Good evidence should:
 
 ---
 
-## Step 4: Find a Certifier
+## Step 4: Co-sign Attestation
 
-### Browse Certifiers
-
-View authorized Certifiers:
-
-```javascript
-// Check if address is a certifier
-const isAuthorized = await certifierRegistry.isCertifier(certifierAddress);
-```
-
-### Considerations
-
-- **Expertise**: Choose Certifiers familiar with your Standard
-- **Reputation**: Check certification history
-- **Availability**: Confirm they can review your submission
-
-### Contact
-
-Reach out to your chosen Certifier with:
-- The Standard you're attempting
-- Your evidence (video link)
-- Any relevant context
-
----
-
-## Step 5: Submit Attestation
-
-### Certifier Review
-
-The Certifier will:
-1. Review your evidence
-2. Verify requirements are met
-3. Create and sign the attestation
-
-### Co-Sign
-
-Once the Certifier approves:
+After the attempt, you and the Certifier co-sign one attestation (2-of-2):
 
 ```javascript
 const attestation = {
+  standardId: standardId,
+  version: standardVersion,
   prover: yourAddress,
   certifier: certifierAddress,
-  standardId: standardId,
-  evidenceHash: evidenceHash,
-  timestamp: timestamp,
-  score: score
+  result: 1,  // PASS=1, NO_PASS=0
+  timestamp: attemptTimestamp,
+  nonce: await popw.getCurrentNonce(yourAddress),
+  deadline: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
+  toolId: toolId,           // Optional: 0x0 if unused
+  evidenceHash: evidenceHash // Optional: 0x0 if unused
 };
 
-// Sign the attestation
+// Both sign the same EIP-712 message
+const domain = {
+  name: "PoPW",
+  version: "1",
+  chainId: chainId,
+  verifyingContract: popwAddress
+};
+
 const proverSig = await signer.signTypedData(domain, types, attestation);
 ```
 
-### Submit to Contract
+---
+
+## Step 5: Submit to Contract
 
 ```javascript
 const tx = await popw.attest(
@@ -153,23 +126,35 @@ const tx = await popw.attest(
 );
 ```
 
----
+### Outcomes
 
-## Step 6: Receive Your BBT
-
-Upon successful verification:
+**PASS (result=1)**:
 - BBT minted to your wallet
 - Certification recorded on-chain
-- Achievement added to your profile
+- Added to leaderboard (if version eligible)
 
-### View Your BBTs
+**NO PASS (result=0)**:
+- Attempt recorded on-chain
+- No BBT minted
+- You can try again
+
+---
+
+## Step 6: View Your BBTs
 
 ```javascript
 // Get your certification tokens
 const balance = await bbt.balanceOf(yourAddress);
 const tokenId = await bbt.tokenOfOwnerByIndex(yourAddress, 0);
 const data = await bbt.tokenData(tokenId);
+// Returns: { standardId, version, certifier, evidenceHash, certifiedAt }
 ```
+
+### BBT Properties
+
+- **Non-transferable**: Cannot be transferred or sold
+- **Does not expire**: BBTs do not expire in v1
+- **One per version**: Default is one PASS per (prover, standardId, version)
 
 ---
 
@@ -177,42 +162,30 @@ const data = await bbt.tokenData(tokenId);
 
 ### Cost Breakdown
 
-Each certification costs the Standard's base fee:
+Each attempt costs the Standard's base fee:
 
-| Recipient | Typical Share |
-|-----------|---------------|
-| Certifier | 50-70% |
-| Creator | 10-30% |
-| Protocol | 10-20% |
+| Recipient | When Paid |
+|-----------|-----------|
+| Certifier | Per attempt (PASS or NO PASS) |
+| Creator | PASS only |
+| Protocol | Remainder |
 
 ### Payment
 
-Fees are paid in $EC tokens:
+Fees are paid in $EC tokens (or other approved fee assets):
 
 ```javascript
-// Approve $EC spending
+// Approve $EC spending before attestation
 await ecToken.approve(popwAddress, fee);
 ```
 
 ---
 
-## Your BBT Collection
+## Leaderboards
 
-### Properties
+Per Standard version: rank verified PASS by the Standard's leaderboard rule (e.g., time, reps, load class).
 
-Each BBT contains:
-- **Standard ID**: What you achieved
-- **Certifier**: Who verified it
-- **Evidence Hash**: Proof reference
-- **Timestamp**: When certified
-- **Score**: Performance score (if applicable)
-
-### Non-Transferable
-
-BBTs are Soul Bound Tokens:
-- Cannot be transferred
-- Cannot be sold
-- Can only be burned by you
+Only versions marked **leaderboard-eligible** appear on leaderboards.
 
 ---
 
@@ -221,34 +194,42 @@ BBTs are Soul Bound Tokens:
 ### Preparation
 - Practice the achievement multiple times
 - Test your recording setup
-- Review evidence requirements carefully
+- Review Standard requirements carefully
+- Ensure equipment matches tool spec exactly
 
 ### Evidence
-- Multiple camera angles (if allowed)
 - Good lighting
-- Clear audio (if relevant)
 - Stable camera position
+- Clear view of all requirements
+- Visible timer
 
 ### Communication
-- Be responsive with Certifiers
-- Provide context when helpful
+- Coordinate with Certifier for live observation
+- Be responsive during the session
 - Ask questions if requirements unclear
 
 ---
 
 ## Troubleshooting
 
-### "Certifier signature invalid"
-- Ensure Certifier is still authorized
-- Check signature matches attestation data
+### "Deadline expired"
+- The attestation deadline passed before submission
+- Request new attestation with fresh deadline
 
-### "Attestation already used"
-- Each attestation can only be submitted once
-- Request new attestation from Certifier
+### "Invalid nonce"
+- Nonce mismatch; get current nonce and re-sign
 
-### "Insufficient $EC balance"
-- Acquire more $EC tokens
-- Check current fee for Standard
+### "Not authorized"
+- Certifier was revoked or not authorized at submission time
+- Find an active authorized Certifier
+
+### "Already passed"
+- You already have a PASS for this (standardId, version)
+- Try a different version or standard
+
+### "Rate limit exceeded"
+- Certifier hit their rate limit for this standard
+- Wait or find another Certifier
 
 ---
 
@@ -260,4 +241,4 @@ BBTs are Soul Bound Tokens:
 
 ---
 
-*Prover Guide v1.0*
+*Prover Guide v1.0.16*

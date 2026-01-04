@@ -1,30 +1,31 @@
 # Certifier Guide
-## Verifying Physical Achievements
+## Verifying Physical Achievements (v1.0.16)
 
 ---
 
 ## Overview
 
-As a **Certifier**, you verify that Provers have genuinely completed physical achievements. Your attestations enable the minting of Body Bound Tokens (BBTs).
+As a **Certifier**, you verify that Provers have genuinely completed physical achievements through **live observation**. Your attestations enable the minting of Body Bound Tokens (BBTs) on PASS.
 
 ---
 
 ## Becoming a Certifier
 
-### Path 1: Genesis Key
+### Phase 1: Genesis Key
 
 Genesis Certifiers are established at protocol launch:
 - Selected for demonstrated expertise
 - Community standing
 - Bootstrap the trust network
+- Can revoke other Certifiers (v1 safety valve)
 
-### Path 2: 3-Vouch Admission
+### Phase 2: 3-Vouch Admission
 
 New Certifiers join via vouching:
 
 1. **Build Reputation**: Demonstrate expertise in your domain
 2. **Connect**: Engage with existing Certifiers
-3. **Request Vouches**: Ask 3 Certifiers to vouch for you
+3. **Receive Vouches**: Get **3 distinct Certifiers** to vouch for you on-chain
 4. **Automatic Admission**: Once 3 vouches received, you're in
 
 ```javascript
@@ -39,22 +40,35 @@ console.log(`Vouches: ${vouches.length}/3`);
 
 ### Core Duties
 
-1. **Honest Verification**: Only certify genuine achievements
-2. **Thorough Review**: Check all Standard requirements
-3. **Timely Response**: Respond to Prover requests promptly
-4. **Quality Evidence**: Ensure evidence meets standards
+1. **Live Observation**: Observe attempts in real-time (co-located or video)
+2. **Honest Verification**: Only certify genuine achievements
+3. **Thorough Review**: Check all Standard requirements
+4. **Timely Response**: Respond to Prover requests promptly
+5. **Maintain Integrity**: Uphold protocol standards
 
-### Reputation
+### Revocation (v1 Safety Valve)
 
-Your reputation is tracked:
-- Total certifications
-- Certifications per Standard
-- Community standing
+Genesis Keys may revoke Certifier status:
 
-Poor performance affects:
-- Vouch weight
-- Prover trust
-- Potential future staking/slashing
+```javascript
+// Only Genesis Keys can call this
+await certifierRegistry.revokeCertifier(certifierAddress);
+```
+
+A revoked Certifier cannot submit new attestations.
+
+---
+
+## Rate Limits
+
+The registry may enforce rate limits per Certifier per Standard per time window:
+
+```javascript
+// Check if you're within rate limit
+const withinLimit = await certifierRegistry.checkRateLimit(yourAddress, standardId);
+```
+
+This prevents excessive certifications and maintains quality.
 
 ---
 
@@ -63,9 +77,8 @@ Poor performance affects:
 ### Step 1: Receive Request
 
 Provers will contact you with:
-- Standard they're attempting
-- Evidence (video, photos, data)
-- Any relevant context
+- Standard (standardId, version) they're attempting
+- Request for live observation session
 
 ### Step 2: Review Standard
 
@@ -73,46 +86,70 @@ Verify you understand the requirements:
 
 ```javascript
 const standard = await standardsRegistry.getStandard(standardId);
-const metadataURI = standard.metadataURI;
-// Fetch and review full requirements from IPFS
+const version = await standardsRegistry.getVersion(standardId, versionNum);
+// Fetch and review full requirements from metadata
 ```
 
-### Step 3: Examine Evidence
+Key elements to review:
+- **Tool spec**: equipment requirements
+- **Task**: what must be accomplished
+- **Evidence requirements**: what you need to observe
+- **Pass rule**: criteria for PASS vs NO PASS
 
-Check that evidence shows:
-- [ ] Achievement completed as specified
-- [ ] Duration requirements met
-- [ ] Equipment matches specifications
-- [ ] Continuous recording (no edits)
-- [ ] All required angles/views present
+### Step 3: Live Observation
+
+**Observation Methods**:
+- **Co-located**: Present in person with the Prover
+- **Live video**: Real-time audio-video call
+
+**During Observation**:
+- Verify equipment matches tool spec
+- Watch the entire attempt in real-time
+- Note timestamps and key moments
+- Confirm evidence requirements are captured
+
+Recording is defined by the Standard and requires **mutual consent**.
 
 ### Step 4: Make Decision
 
-**Approve** if:
+**PASS (result=1)** if:
 - All requirements clearly met
 - Evidence is unambiguous
 - No signs of manipulation
+- Observed live as required
 
-**Reject** if:
+**NO PASS (result=0)** if:
 - Requirements not met
 - Evidence insufficient
 - Concerns about authenticity
+- Observation was not truly live
 
-### Step 5: Sign Attestation
+### Step 5: Co-sign Attestation
 
-If approving:
+If decision made, co-sign the attestation:
 
 ```javascript
 const attestation = {
+  standardId: standardId,
+  version: standardVersion,
   prover: proverAddress,
   certifier: yourAddress,
-  standardId: standardId,
-  evidenceHash: keccak256(evidenceCID),
-  timestamp: Math.floor(Date.now() / 1000),
-  score: calculateScore(evidence) // if applicable
+  result: 1,  // PASS=1, NO_PASS=0
+  timestamp: attemptTimestamp,
+  nonce: await popw.getCurrentNonce(proverAddress),
+  deadline: Math.floor(Date.now() / 1000) + 3600,
+  toolId: toolId,           // Optional
+  evidenceHash: evidenceHash // Optional
 };
 
 // Sign using EIP-712
+const domain = {
+  name: "PoPW",
+  version: "1",
+  chainId: chainId,
+  verifyingContract: popwAddress
+};
+
 const signature = await signer.signTypedData(domain, types, attestation);
 ```
 
@@ -127,51 +164,22 @@ Send the Prover:
 
 ## Verification Guidelines
 
-### Video Evidence
+### Live Observation Checklist
 
-**Check for:**
-- Continuous footage (no jump cuts)
-- Clear view of achievement
-- Timer/clock visible
-- Equipment specifications met
-- No signs of editing/manipulation
+- [ ] Observation is real-time (not recorded)
+- [ ] Equipment matches Standard tool spec
+- [ ] Achievement completed as specified
+- [ ] Duration requirements met
+- [ ] All required views captured
+- [ ] No signs of manipulation
 
-**Red Flags:**
-- Cuts or transitions
+### Red Flags
+
+- Pre-recorded submissions claiming to be live
+- Equipment not matching specifications
+- Cuts or transitions in recording
 - Obscured key moments
-- Inconsistent lighting/shadows
-- Audio/video sync issues
-
-### Equipment Verification
-
-- Visible measurements/specifications
-- Matches Standard requirements
-- Proper setup and safety
-
-### Duration Verification
-
-- Clear start and end points
-- Visible timer or reference
-- Meets minimum requirements
-
----
-
-## Scoring (When Applicable)
-
-Some Standards include scoring:
-
-```json
-{
-  "scoring": {
-    "type": "duration",
-    "unit": "seconds",
-    "min_pass": 60,
-    "max_score": 300
-  }
-}
-```
-
-Calculate and include accurate scores in attestations.
+- Inconsistent timestamps
 
 ---
 
@@ -210,19 +218,19 @@ await certifierRegistry.revokeVouch(candidateAddress);
 
 ### Earning Fees
 
-Per certification, you receive:
+Certifiers earn a fee **per attempt** (both PASS and NO PASS):
 
 ```
-Certifier Share = Base Fee × Certifier BPS / 10000
+Certifier Reward = Base Fee × Certifier BPS / 10000
 ```
 
-Typical range: 50-70% of base fee.
+This is paid for every attempt you certify, regardless of outcome.
 
 ### Example
 
 Standard with 100 $EC base fee, 60% certifier share:
 ```
-100 × 6000 / 10000 = 60 $EC per certification
+100 × 6000 / 10000 = 60 $EC per attempt
 ```
 
 ---
@@ -232,7 +240,7 @@ Standard with 100 $EC base fee, 60% certifier share:
 ### Be Thorough
 - Review all requirements before certifying
 - Don't rush verifications
-- Ask for additional evidence if needed
+- Ask for clarification if needed
 
 ### Be Fair
 - Apply standards consistently
@@ -242,12 +250,17 @@ Standard with 100 $EC base fee, 60% certifier share:
 ### Be Professional
 - Respond promptly
 - Communicate clearly
-- Provide constructive feedback on rejections
+- Provide constructive feedback on NO PASS
 
 ### Be Honest
 - Never certify unverified achievements
 - Report suspicious activity
 - Maintain protocol integrity
+
+### Monitor Your Limits
+- Be aware of rate limits per standard
+- Don't exceed sustainable certification volume
+- Maintain quality over quantity
 
 ---
 
@@ -258,44 +271,36 @@ Standard with 100 $EC base fee, 60% certifier share:
 When achievement is close but unclear:
 1. Request additional evidence
 2. Ask for specific clarification
-3. Default to not certifying if uncertain
-
-### Disputes
-
-If Prover disagrees with rejection:
-1. Explain specific requirement not met
-2. Offer to review additional evidence
-3. Suggest they try again with better documentation
+3. Default to NO PASS if uncertain
 
 ### Technical Issues
 
-If evidence has technical problems:
-1. Request re-upload
-2. Suggest evidence capture improvements
-3. Be patient with technical difficulties
+If observation has technical problems:
+1. Reschedule the live session
+2. Ensure better connection/setup
+3. Don't certify based on incomplete observation
+
+### Disputes
+
+If Prover disagrees with NO PASS:
+1. Explain specific requirement not met
+2. Offer to observe another attempt
+3. Suggest improvements for next time
 
 ---
 
-## Tools & Resources
+## Monitoring
 
-### Verification Tools
-- Video analysis software
-- Measurement verification
-- Timestamp checking
-
-### References
-- Standard definitions: `/standards/`
-- Technical spec: `/docs/technical-spec.md`
-- Schema reference: `/standards/schema.json`
+Anomalous Certifier–Prover concentration may be excluded from leaderboard eligibility. Maintain diverse certification patterns.
 
 ---
 
 ## Support
 
 - Protocol documentation: `/docs/`
+- Technical spec: `/docs/technical-spec.md`
 - Community channels: [TBD]
-- Technical support: [TBD]
 
 ---
 
-*Certifier Guide v1.0*
+*Certifier Guide v1.0.16*

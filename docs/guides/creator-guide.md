@@ -1,21 +1,22 @@
 # Creator Guide
-## Defining Certification Standards
+## Defining Certification Standards (v1.0.16)
 
 ---
 
 ## Overview
 
-As a **Creator**, you define the Standards that Provers can achieve and Certifiers can verify. Standards are the building blocks of the Embodied Coherence protocol.
+As a **Creator**, you define the Standards that Provers can achieve and Certifiers can verify. Standards are versioned and immutable once published.
 
 ---
 
 ## What is a Standard?
 
-A Standard is a JSON definition that specifies:
-- **What** physical achievement is being certified
-- **How** it should be verified
-- **What** evidence is required
-- **How** creators are compensated
+A Standard (standardId, version) specifies:
+- **Tool spec**: equipment requirements
+- **Task**: what achievement is being certified
+- **Evidence requirements**: what proof is needed
+- **Pass rule**: criteria for PASS vs NO PASS
+- **Leaderboard rule**: how to rank verified PASS results
 
 ---
 
@@ -28,13 +29,14 @@ Be specific and measurable:
 ```json
 {
   "name": "Sadhu Board Hold - 1 Minute",
+  "version": "1.0.0",
   "description": "Maintain standing position on sadhu board (10mm nails, 10mm spacing) for 60 continuous seconds",
   "category": "endurance",
   "difficulty": "intermediate"
 }
 ```
 
-### Step 2: Specify Requirements
+### Step 2: Specify Requirements (Tool Spec)
 
 Detail the exact conditions:
 
@@ -44,18 +46,20 @@ Detail the exact conditions:
     "duration_seconds": 60,
     "equipment": {
       "type": "sadhu_board",
-      "nail_height_mm": 10,
-      "nail_spacing_mm": 10
+      "specifications": {
+        "nail_height_mm": 10,
+        "nail_spacing_mm": 10
+      }
     },
     "position": "standing",
-    "allowed_support": "none"
+    "restrictions": ["no_external_support"]
   }
 }
 ```
 
 ### Step 3: Define Evidence Schema
 
-Specify what proof is needed:
+Specify what proof is needed for live observation:
 
 ```json
 {
@@ -64,16 +68,30 @@ Specify what proof is needed:
     "video": {
       "min_duration_seconds": 65,
       "must_show": ["full_body", "timer", "board_detail"],
-      "continuous": true
+      "continuous": true,
+      "min_resolution": "720p"
     },
-    "optional": ["witness_attestation", "sensor_data"]
+    "optional": ["witness"]
   }
 }
 ```
 
-### Step 4: Set Economics
+### Step 4: Define Pass Rule and Scoring
 
-Define your royalty share:
+```json
+{
+  "scoring": {
+    "type": "duration",
+    "unit": "seconds",
+    "min_pass": 60,
+    "max_score": 300
+  }
+}
+```
+
+### Step 5: Set Economics
+
+Define your royalty share (earned on PASS only):
 
 ```json
 {
@@ -85,7 +103,7 @@ Define your royalty share:
 ```
 
 - `base_fee_ec`: Fee in $EC tokens
-- `creator_royalty_bps`: Your share in basis points (2000 = 20%)
+- `creator_royalty_bps`: Your share in basis points (2000 = 20%), paid only on PASS
 
 ---
 
@@ -98,13 +116,12 @@ Define your royalty share:
 npx ajv validate -s standards/schema.json -d your-standard.json
 ```
 
-### 2. Upload Metadata
+### 2. Compute Metadata Hash
 
-Upload your standard JSON to IPFS:
+Hash your standard JSON for on-chain reference:
 
-```bash
-ipfs add your-standard.json
-# Returns: QmYourStandardHash
+```javascript
+const metadataHash = keccak256(standardJsonBytes);
 ```
 
 ### 3. Register On-Chain
@@ -113,11 +130,40 @@ Call `StandardsRegistry.createStandard()`:
 
 ```javascript
 const tx = await standardsRegistry.createStandard(
-  "ipfs://QmYourStandardHash",  // metadataURI
-  2000,                          // royaltyBps (20%)
-  ethers.parseEther("100")       // baseFee in $EC
+  metadataHash,                        // bytes32 metadata hash
+  2000,                                // royaltyBps (20%)
+  ethers.parseEther("100")             // baseFee in $EC
 );
+// Returns: standardId (bytes32)
 ```
+
+---
+
+## Adding New Versions
+
+Standards are versioned. Each version is immutable.
+
+```javascript
+// Add a new version to an existing standard
+const tx = await standardsRegistry.addVersion(
+  standardId,      // existing standard ID
+  newMetadataHash  // hash of updated JSON
+);
+// Returns: version number (uint32)
+```
+
+---
+
+## Leaderboard Eligibility
+
+The registry may mark a Standard version as **leaderboard-eligible**:
+
+```javascript
+// Only protocol governance can set this
+await standardsRegistry.setLeaderboardEligible(standardId, version, true);
+```
+
+Leaderboards rank verified PASS results by your Standard's leaderboard rule.
 
 ---
 
@@ -132,8 +178,8 @@ const tx = await standardsRegistry.createStandard(
 - Consider progression paths (beginner → advanced)
 
 ### Be Verifiable
-- Evidence requirements must be practical
-- Consider what Certifiers can reasonably verify
+- Evidence requirements must be practical for live observation
+- Consider what Certifiers can reasonably verify in real-time
 
 ### Consider Safety
 - Include safety requirements where appropriate
@@ -162,7 +208,7 @@ const tx = await standardsRegistry.createStandard(
 
 ## Royalty Economics
 
-Your earnings per certification:
+Your earnings per PASS certification:
 
 ```
 Your Royalty = Base Fee × (Royalty BPS / 10000)
@@ -170,18 +216,20 @@ Your Royalty = Base Fee × (Royalty BPS / 10000)
 
 Example with 100 $EC base fee and 20% royalty:
 ```
-100 × (2000 / 10000) = 20 $EC per certification
+100 × (2000 / 10000) = 20 $EC per PASS
 ```
+
+Note: Creator royalty is only paid on PASS. NO PASS attempts do not generate creator royalty.
 
 ---
 
 ## Updating Standards
 
-Standards are **immutable** once published. To update:
+Versions are **immutable** once published. To update:
 
-1. Create a new version with updated parameters
-2. Deactivate the old version (optional)
-3. The new version gets a new `standardId`
+1. Create a new version with `addVersion()`
+2. The new version gets an incremented version number
+3. Both versions remain valid; leaderboard eligibility is set per version
 
 ---
 
@@ -193,4 +241,4 @@ Standards are **immutable** once published. To update:
 
 ---
 
-*Creator Guide v1.0*
+*Creator Guide v1.0.16*
