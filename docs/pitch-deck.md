@@ -1,184 +1,177 @@
 # Embodied Coherence
-## Proof of Physical Work (PoPW) — v0.2 Pitch Deck (Spec-aligned to v1.0.16)
+## Proof of Physical Work (PoPW) — v0.6 Investor Pitch Deck (Spec-aligned to v1.0.16)
 
 ---
 
-## 1) One-line
-A protocol that issues non-transferable credentials for physical achievements verified by authorized certifiers under shared standards.
+## 1) One-line + wedge
+A protocol that issues non-transferable credentials for physical achievements—starting with **grip + balance benchmarks** run by partner gyms and coaches—creating **portable proof and credible leaderboards** under shared Standards.
 
 ---
 
-## 2) Why now
-- Physical achievement is hard to verify and compare across contexts.
-- Most records are platform-bound and not portable.
-- Standards and lineages are fragmented.
+## 2) The problem
+Physical achievement is high-signal but hard to reuse outside the room.
+- Results are hard to compare across gyms because tools and rules differ
+- Verification is local (coach / gym / community) and not portable
+- Platforms can change policies, rankings, and history (even when acting in good faith)
 
 ---
 
-## 3) What PoPW does
-PoPW provides:
-- **Standards**: versioned definitions of tests (tool + rules + leaderboard semantics)
-- **Live certification**: an authorized certifier observes an attempt live
-- **On-chain record**: minimal, durable attestation of the outcome
-- **Credential minting**: PASS mints a non-transferable token to the prover
+## 3) Why this wedge wins first (and who pays)
+Grip + balance benchmarks fit live certification and have a clear buyer.
+- **Low equipment variance:** tools can be specified tightly
+- **Fast sessions:** short attempts, clear pass rules
+- **Normal workflow:** coaching + judging already happens live
+- **Clear buyer:** gyms/coaches can offer certified benchmarks as a session/event; members pay for portable proof
 
 ---
 
-## 4) Core objects (terms used consistently)
-- **Standard (standardId, version)**: tool spec, task, evidence requirements, pass rule, leaderboard rule
-- **Attestation**: 2-of-2 signed attempt record (Prover + Certifier), PASS / NO PASS
-- **BBT (SBT)**: non-transferable credential minted on PASS; does not expire in v1
-- **$EC**: fee / governance token (fee assets may expand)
+## 4) The solution
+PoPW provides a shared credential rail for physical tests:
+- **Standards:** versioned definitions of tests (tool + rules + leaderboard semantics)
+- **Live certification:** an authorized Certifier verifies an attempt under live observation
+- **Publicly verifiable record:** minimal on-chain attestation of PASS / NO PASS
+- **Credential:** PASS mints a Bodybound Token (BBT) to the prover
+
+PoPW is not a marketplace for judging—it is a **shared standards and credential rail** that many certifiers and apps can use.
 
 ---
 
-## 5) Roles
-- **Creator**: registers standards; earns royalty per PASS mint
-- **Prover**: attempts; pays fee
-- **Certifier**: authorized; observes live; co-signs; earns fee
-- **Genesis Keys**: initial certifiers; manage certifier set in v1
+## 5) Product experience (what a session looks like)
+`Select Standard → Live session → Co-sign → Submit → Credential + leaderboard`
+
+- App shows a session checklist from the Standard (tool check, camera checks, evidence rules)
+- Certifier observes live (co-located or video)
+- Prover + Certifier sign one shared attestation (2-of-2)
+- 2-tap signing + auto-submission (EIP-712 under the hood)
+- PASS mints BBT; NO PASS records the attempt
 
 ---
 
-## 6) How it works (per attempt)
-`1) Select Standard → 2) Observe Live → 3) Co-sign → 4) On-chain → 5) Leaderboard`
+## 6) Example Standard (serious, repeatable)
+**Single-Leg Balance Hold — 60s (standardId SLB, version 1)**
+- **Tool spec:** defined balance board geometry (model or tolerances); official or verified-to-spec
+- **Setup checks:** show tool ID/marking; show surface; show footwear rule (barefoot/shoes) per Standard
+- **Camera:** continuous view of full body + tool for full attempt
+- **Task:** hold single-leg stance for 60s under defined posture constraints
+- **Pass rule:** no support contact; no stepping off; no prohibited bracing
+- **Leaderboard rule:** rank by duration (≥60s counts as PASS; longer durations rank higher, if allowed by the Standard)
+- **Evidence:** recording defined per Standard; if recorded, stored off-chain by consent (hash/pointer allowed)
 
-1. Prover selects **(standardId, version)** and uses a tool matching the spec
-2. Prover performs under **live observation** (co-located or video)
-3. Prover + Certifier co-sign one attestation (2-of-2)
-4. Attestation recorded on-chain
-   - **PASS**: mint BBT
-   - **NO PASS**: record attempt; no BBT
-5. Leaderboards rank **verified PASS** per standard (eligible versions only)
+Versioning example: **v2** may tighten camera placement or prohibited bracing without rewriting **v1** history.
 
 ---
 
-## 7) Trust model (v1)
-PoPW v1 is **permissioned** by design.
+## 7) Why a chain (vs a database)
+PoPW uses a chain to provide:
+- A neutral registry of **Standard IDs + versions**
+- Attestations that are publicly verifiable and non-repudiable (both parties signed)
+- Portability across apps and communities (anyone can read the credential graph)
+- Auditable history of standards and attestations
+- A durable record not tied to one operator's database
+
+---
+
+## 8) Trust model (v1): integrity-first
+PoPW v1 is permissioned to prioritize signal quality.
 
 **Certifier authorization**
-- **Phase 1 (Genesis):** only Genesis Keys certify
-- **Phase 2 (Expansion):** candidate becomes certifier after **3 on-chain vouches**
-- **Revocation:** Genesis Keys may revoke certifier status (v1 safety valve)
+- **Phase 1 (Genesis):** only Genesis Keys certify (**multisig**, with published signers recommended)
+- **Phase 2 (Expansion):** new Certifier after **3 on-chain vouches**
+- **Revocation:** Genesis Keys may revoke (v1 safety valve)
 
-**Integrity controls**
-- Rate limits: per certifier, per standard, per time window
+**Controls**
+- Rate limits per certifier / standard / time window
 - Monitoring: anomalous certifier–prover concentration may be excluded from leaderboards
-- Leaderboard eligibility is an explicit standards-registry flag
+- Leaderboard eligibility is a standards-registry flag (credentials still exist)
+- Onboarding playbooks + periodic review of certifier activity patterns
 
 ---
 
-## 8) Technical highlights (v1)
-**Attestation (EIP-712)**
-- Domain separation + nonce + deadline
-- One canonical message signed by both parties
-
-**Authorization timing**
-- Certifier authorization checked at **submission time**
-
-**Data minimization**
-- On-chain: standardId+version, prover, certifier, timestamp, PASS/NO PASS
-- Optional: toolId, evidence hash/pointer (off-chain)
-
-**Credential behavior**
-- BBT is non-transferable (transfers + approvals disabled)
-- Default: one PASS per (prover, standardId, version)
+## 9) Integrity v1: prevent / deter / defer
+| Category | Status in v1 |
+|---|---|
+| Replay / signature reuse | Prevented (EIP-712 + nonce + deadline) |
+| Unauthorized certification | Prevented (registry-gated; checked at submission) |
+| Silent standard changes | Prevented (immutable versions) |
+| Farming throughput | Deterred (rate limits) |
+| Collusion / bribery | Mitigated / detectable for leaderboards (permissioning + monitoring + eligibility) |
+| Disputes / slashing / courts | Deferred (out of scope v1) |
+| Anonymous proving / "one human" identity | Deferred (out of scope v1) |
 
 ---
 
-## 9) Standards and leaderboards
-**Standards Registry (v1)**
-- Stores creator + versioned metadata pointer/hash
-- Versions immutable
-- Registry may mark a version **leaderboard-eligible**
+## 10) Economics (one coherent example)
+Fees are priced in USD-equivalent and paid in protocol-approved assets (v1 supports $EC; stable assets can be added as approved fee assets).
 
-**Leaderboards**
-- Per standard version: rank verified PASS by the standard's leaderboard rule
-  (examples: time, reps, load class)
-
----
-
-## 10) Privacy & safety baseline (v1)
-- Recording is defined by the standard and requires **mutual consent**
-- Media stays **off-chain**
-- Attestation may reference media by hash/pointer
+**Illustrative example**
+- **Attempt fee: $10** (covers live labor)
+  - $7 Certifier reward (per attempt)
+  - $3 Protocol ops
+- **PASS mint fee: $5** (funds credential issuance + creator royalties)
+  - $3 Creator royalty (PASS only)
+  - $2 Protocol ops
 
 ---
 
-## 11) Economics (v1)
-Fees (in $EC or other protocol-approved fee assets) split to:
-- **Certifier reward** (default: per attempt)
-- **Creator royalty** (PASS only)
-- **Protocol ops**
+## 11) Go-to-market (bootstrapping the network)
+**Genesis**
+- Founders run certification sessions with partner gyms/coaches
+- Publish initial Standard catalog and mark a small set as leaderboard-eligible
 
-*(Exact splits are parameters; not part of the core protocol definition.)*
-
----
-
-## 12) What PoPW v1 is (and is not)
-**PoPW v1 is:**
-- A live-observed, registry-gated credential issuance protocol
-- Standards-driven, versioned, auditable, minimal on-chain
-
-**PoPW v1 is not:**
-- Trustless / fully decentralized verification
-- Anonymous proving (no "one human = one identity" in v1)
-- A dispute court or decentralized adjudication system
-- Automated fraud detection or sensor-based proof
-- A revocable credential system (BBTs do not expire in v1)
+**Expansion**
+- Certifier supply grows via 3-vouch admission
+- Standards spread through creators who want portable benchmarks
+- Members attempt → earn credential → share → others join → gyms host more sessions
 
 ---
 
-## 13) Implementation modules (monorepo view)
-- **Certifier Registry**: phases, vouching, revocation, rate limits
-- **Standards Registry**: versioned metadata + leaderboard eligibility
-- **Attest + Mint (PoPW)**: signature checks, nonces, deadlines, authorization gate, mint on PASS
-- **BBT**: non-transferable token
-- **Client app**: session checklist + signing flow + submission
+## 12) Competitive landscape (positioning)
+| Option | Verification | Portability | Standardization | Composability |
+|---|---:|---:|---:|---:|
+| Platform leaderboards (Web2) | Varies | Low | Mixed | Low |
+| Local certifications (gyms/orgs) | High | Low | Medium | Low |
+| Attendance badges (POAP-like) | Medium (presence varies) | High | N/A | Medium |
+| PoPW (Embodied Coherence) | High (authorized live certifier) | High | High (versioned) | High |
 
 ---
 
-## 14) Rollout plan
-**Phase 1: Genesis**
-- Founders operate as certifiers
-- Publish initial standards and run certification sessions
-
-**Phase 2: Expansion**
-- Admit certifiers via 3-vouch rule
-- Turn on rate limits and leaderboard eligibility curation
-
-**Phase 3: Hardening**
-- Monitoring + anomaly handling for leaderboards
-- Add multi-certifier options for select standards (future versions)
+## 13) Defensibility
+- **Standards network effects:** common standardId/version becomes the shared benchmark
+- **Certifier network:** coverage + admission rules + reputation over time
+- **Integrity controls:** leaderboard eligibility + monitoring + rate limits
+- **Standards lineage + credential graph:** shared public reference dataset that others build on
 
 ---
 
-## 15) Roadmap
-**Now (v1.0.16)**
-- Protocol spec complete
-- Contract architecture defined
-
-**Next**
-- Implement + test contracts (Foundry)
+## 14) Roadmap (measurable)
+**v1 ship**
+- Contracts implemented + tested
 - Testnet deployment
-- Security audit
-- Certification app (mobile-first)
+- Audit
+- Mobile certification app (session checklist + signing + submission)
 
-**Future**
-- Multi-certifier attestations
-- Staking + dispute flags
-- Automated evidence checks (assistive)
-
----
-
-## 16) The ask
-Seed to ship v1:
-- Contract implementation + audit
-- App development
-- Genesis certifier operations + onboarding
+**Pilot targets (first 6–12 months)**
+- 10–20 partner gyms/coaches
+- 20–50 active certifiers (scales with partner density; onboarding playbooks + monitoring)
+- 5–10 leaderboard-eligible Standard versions
+- 10k–50k attempts recorded (mix of PASS/NO PASS)
 
 ---
 
-## 17) Links
-Repo: `/bodybound`
-Docs: `/docs`
+## 15) Readiness (what exists now)
+- Protocol spec: v1.0.16 complete (registries + EIP-712 schema + integrity controls)
+- Monorepo plan defined (contracts / app / standards / docs)
+- Standard format defined: versioned metadata pointer/hash; leaderboard eligibility flag
+- Genesis plan defined: partner gym sessions + certifier onboarding workflow
+
+---
+
+## 16) Ask + end-of-runway goal
+**Seed round (target): $2.5M** for ~18 months runway to reach:
+- Audited v1 + mobile app shipped
+- 10–20 gym pilots live
+- 20–50 active certifiers
+- 5–10 leaderboard-eligible Standard versions
+- 10k–50k attempts recorded
+
+Contact: `/bodybound` • `/docs`
