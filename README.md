@@ -68,7 +68,7 @@ bodybound/
 │   ├── src/               # Contract source files
 │   ├── test/              # Contract tests
 │   └── script/            # Deployment scripts
-├── standards/             # Trial definitions
+├── trials/             # Trial definitions
 │   ├── schema.json        # Trial JSON schema
 │   └── v1/                # Version 1 Trials
 ├── app/                   # Frontend application
@@ -142,4 +142,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 - Documentation: `/docs`
 - Contracts: `/contracts`
-- Trials: `/standards`
+- Trials: `/trials`
