@@ -69,8 +69,8 @@ bodybound/
 │   ├── test/              # Contract tests
 │   └── script/            # Deployment scripts
 ├── trials/             # Trial definitions
-│   ├── schema.json        # Trial JSON schema
-│   └── v1/                # Version 1 Trials
+│   ├── schema.yaml        # Trial schema (YAML)
+│   └── v1/                # Version 1 Trials (YAML)
 ├── app/                   # Frontend application
 └── assets/                # Branding and media assets
 ```

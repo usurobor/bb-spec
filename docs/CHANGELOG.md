@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.17] - 2026-01-05
+
+### Trials
+- Converted all Trial definitions from JSON to YAML format
+- YAML provides better readability and supports comments for safety notes
+- Updated schema.json → schema.yaml
+- Trial files: sadhu-board-1m.yaml, heavy-cup.yaml, slack-board-1m.yaml, lotus-wheel-1m.yaml
+
+---
+
 ## [1.0.16] - 2026-01-04
 
 ### Protocol Spec (Whitepaper)
