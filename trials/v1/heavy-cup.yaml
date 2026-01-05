@@ -1,0 +1,72 @@
+# Heavy Cup Hold
+# Category: Strength | Difficulty: Beginner
+
+name: Heavy Cup Hold
+version: "1.0.0"
+description: >
+  Hold a weighted cup (minimum 2kg) at arm's length in front of the body
+  for a minimum of 60 seconds. The arm must remain horizontal and fully
+  extended, demonstrating shoulder endurance and stability.
+
+category: strength
+difficulty: beginner
+
+requirements:
+  duration_seconds: 60
+  weight_kg: 2
+  equipment:
+    type: weighted_cup
+    specifications:
+      min_weight_kg: 2
+      handle_required: true
+      cup_style: any
+  position: standing_or_seated
+  restrictions:
+    - arm_must_be_horizontal
+    - arm_fully_extended
+    - no_resting_arm_on_body
+    - no_swinging_or_momentum
+
+evidence:
+  required:
+    - video
+  optional:
+    - photo
+  video:
+    min_duration_seconds: 65
+    must_show:
+      - full_arm_and_cup
+      - visible_timer
+      - weight_verification_before_start
+      - horizontal_arm_position
+    continuous: true
+    min_resolution: "720p"
+
+scoring:
+  type: duration
+  unit: seconds
+  min_pass: 60
+  max_score: 300
+
+economics:
+  base_fee_ec: 25
+  creator_royalty_bps: 1500  # 15%
+
+safety:
+  warnings:
+    - Shoulder strain possible - warm up properly
+    - Use appropriate weight for your level
+  contraindications:
+    - Shoulder injuries
+    - Rotator cuff problems
+  recommended_supervision: false
+
+metadata:
+  creator: Embodied Coherence Genesis
+  created_at: "2026-01-04T00:00:00Z"
+  tags:
+    - shoulder
+    - endurance
+    - stability
+    - beginner
+  related_trials: []

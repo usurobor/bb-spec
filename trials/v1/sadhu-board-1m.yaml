@@ -1,0 +1,76 @@
+# Sadhu Board Hold - 1 Minute
+# Category: Endurance | Difficulty: Intermediate
+
+name: Sadhu Board Hold - 1 Minute
+version: "1.0.0"
+description: >
+  Maintain standing position on a sadhu board with 10mm nails at 10mm spacing
+  for a minimum of 60 continuous seconds. The practitioner must stand fully
+  upright without external support, demonstrating mastery of pain tolerance
+  and grounding.
+
+category: endurance
+difficulty: intermediate
+
+requirements:
+  duration_seconds: 60
+  equipment:
+    type: sadhu_board
+    specifications:
+      nail_height_mm: 10
+      nail_spacing_mm: 10
+      nail_material: steel
+      board_size_cm: "30x40 minimum"
+  position: standing_upright
+  restrictions:
+    - no_external_support
+    - no_sitting
+    - no_kneeling
+    - feet_must_remain_on_nails
+
+evidence:
+  required:
+    - video
+  optional:
+    - witness
+    - photo
+  video:
+    min_duration_seconds: 65
+    must_show:
+      - full_body
+      - visible_timer
+      - board_detail_before_start
+      - feet_on_nails
+    continuous: true
+    min_resolution: "720p"
+
+scoring:
+  type: duration
+  unit: seconds
+  min_pass: 60
+  max_score: 600
+
+economics:
+  base_fee_ec: 50
+  creator_royalty_bps: 2000  # 20%
+
+safety:
+  warnings:
+    - Risk of puncture wounds if balance is lost
+    - Not recommended for those with blood disorders
+    - Ensure board is on stable, flat surface
+  contraindications:
+    - Diabetes with neuropathy
+    - Blood clotting disorders
+    - Open wounds on feet
+  recommended_supervision: true
+
+metadata:
+  creator: Embodied Coherence Genesis
+  created_at: "2026-01-04T00:00:00Z"
+  tags:
+    - pain_tolerance
+    - grounding
+    - meditation
+    - endurance
+  related_trials: []

@@ -1,0 +1,250 @@
+# Embodied Coherence Trial Schema
+# JSON Schema Draft-07 in YAML format
+# Used to validate Trial definitions
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://embodiedcoherence.io/schemas/trial.yaml"
+title: Embodied Coherence Trial
+description: Schema for Trial definitions
+
+type: object
+required:
+  - name
+  - version
+  - description
+  - category
+  - requirements
+  - evidence
+  - economics
+
+properties:
+  name:
+    type: string
+    description: Human-readable name of the Trial
+    minLength: 1
+    maxLength: 100
+
+  version:
+    type: string
+    description: Semantic version of the Trial
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+
+  description:
+    type: string
+    description: Detailed description of the achievement
+    minLength: 10
+    maxLength: 2000
+
+  category:
+    type: string
+    description: Category of physical achievement
+    enum:
+      - endurance
+      - strength
+      - flexibility
+      - balance
+      - skill
+      - speed
+      - recovery
+      - other
+
+  difficulty:
+    type: string
+    description: Difficulty level
+    enum:
+      - beginner
+      - intermediate
+      - advanced
+      - elite
+
+  requirements:
+    type: object
+    description: Specific requirements for the achievement
+    properties:
+      duration_seconds:
+        type: integer
+        minimum: 0
+        description: Required duration in seconds
+
+      repetitions:
+        type: integer
+        minimum: 0
+        description: Required number of repetitions
+
+      weight_kg:
+        type: number
+        minimum: 0
+        description: Required weight in kilograms
+
+      distance_meters:
+        type: number
+        minimum: 0
+        description: Required distance in meters
+
+      equipment:
+        type: object
+        description: Equipment specifications
+        properties:
+          type:
+            type: string
+            description: Type of equipment required
+          specifications:
+            type: object
+            description: Detailed equipment specifications
+
+      position:
+        type: string
+        description: Required body position
+
+      environment:
+        type: object
+        description: Environmental requirements
+        properties:
+          temperature_c:
+            type: number
+            description: Required temperature in Celsius
+          altitude_m:
+            type: number
+            description: Required altitude in meters
+          surface:
+            type: string
+            description: Required surface type
+
+      restrictions:
+        type: array
+        description: Things not allowed during the attempt
+        items:
+          type: string
+
+  evidence:
+    type: object
+    description: Evidence requirements
+    required:
+      - required
+    properties:
+      required:
+        type: array
+        description: Required evidence types
+        items:
+          type: string
+          enum:
+            - video
+            - photo
+            - sensor_data
+            - witness
+            - gps
+            - timestamp
+        minItems: 1
+
+      optional:
+        type: array
+        description: Optional evidence types
+        items:
+          type: string
+
+      video:
+        type: object
+        description: Video evidence requirements
+        properties:
+          min_duration_seconds:
+            type: integer
+            minimum: 1
+          must_show:
+            type: array
+            items:
+              type: string
+          continuous:
+            type: boolean
+            description: Whether video must be uncut
+          min_resolution:
+            type: string
+            description: "Minimum resolution (e.g., '720p')"
+
+      sensor:
+        type: object
+        description: Sensor data requirements
+        properties:
+          types:
+            type: array
+            items:
+              type: string
+          min_sample_rate_hz:
+            type: integer
+
+  scoring:
+    type: object
+    description: Scoring configuration
+    properties:
+      type:
+        type: string
+        enum:
+          - binary
+          - duration
+          - repetitions
+          - distance
+          - weight
+          - composite
+        description: Type of scoring
+      unit:
+        type: string
+        description: Unit of measurement
+      min_pass:
+        type: number
+        description: Minimum value to pass
+      max_score:
+        type: number
+        description: Maximum possible score
+      formula:
+        type: string
+        description: Scoring formula (for composite)
+
+  economics:
+    type: object
+    description: Economic parameters
+    required:
+      - base_fee_ec
+      - creator_royalty_bps
+    properties:
+      base_fee_ec:
+        type: number
+        minimum: 0
+        description: Base certification fee in $EC tokens
+      creator_royalty_bps:
+        type: integer
+        minimum: 0
+        maximum: 3000
+        description: Creator royalty in basis points (max 30%)
+
+  safety:
+    type: object
+    description: Safety information
+    properties:
+      warnings:
+        type: array
+        items:
+          type: string
+      contraindications:
+        type: array
+        items:
+          type: string
+      recommended_supervision:
+        type: boolean
+
+  metadata:
+    type: object
+    description: Additional metadata
+    properties:
+      creator:
+        type: string
+        description: Creator identifier or address
+      created_at:
+        type: string
+        format: date-time
+      tags:
+        type: array
+        items:
+          type: string
+      related_trials:
+        type: array
+        items:
+          type: string
