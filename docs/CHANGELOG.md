@@ -16,6 +16,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Trial files: sadhu-board-1m.yaml, heavy-cup.yaml, slack-board-1m.yaml, lotus-wheel-1m.yaml
 - Renamed `creator_royalty_bps` → `architect_royalty_bps` for vocabulary consistency
 
+### Technical Spec
+- Added `replayRef` (string) to `RecordSubmitted` and `BadgeMinted` events
+- Added Replay Discoverability section: clients resolve Replay from event logs (no external lookup)
+- `replayRef` limited to 256 bytes, MUST NOT embed secrets, SHOULD be CID or storage key
+
 ### Documentation
 - Fixed path references in guides: `/standards/` → `/trials/`
 - Updated demo script to use existing Trial (slack-board-1m v1)

@@ -240,9 +240,9 @@ function submitRecord(...) external returns (uint256 tokenId) {
         _distributeFees(record.trialId, record.marshal, false);
     }
 
-    emit RecordSubmitted(recordHash, record.contender, record.marshal, record.trialId, record.version, record.result, record.replayHash);
+    emit RecordSubmitted(recordHash, record.contender, record.marshal, record.trialId, record.version, record.result, record.replayHash, record.replayRef);
     if (record.result == PASS) {
-        emit BadgeMinted(tokenId, record.contender, record.trialId, record.version, record.replayHash);
+        emit BadgeMinted(tokenId, record.contender, record.trialId, record.version, record.replayHash, record.replayRef);
     }
 }
 ```
@@ -256,16 +256,27 @@ event RecordSubmitted(
     bytes32 trialId,
     uint32 version,
     uint8 result,
-    bytes32 replayHash
+    bytes32 replayHash,
+    string replayRef       // max 256 bytes; empty for NO_PASS
 );
 event BadgeMinted(
     uint256 indexed tokenId,
     address indexed contender,
     bytes32 indexed trialId,
     uint32 version,
-    bytes32 replayHash
+    bytes32 replayHash,
+    string replayRef       // content-address (CID) or storage key
 );
 ```
+
+**Replay Discoverability**:
+
+For PASS records, `replayHash` and `replayRef` are emitted in `RecordSubmitted` (and `BadgeMinted`). Clients resolve the Replay by reading event logs—no external lookup required.
+
+- `replayRef` SHOULD be a content-address (e.g., IPFS CID) or opaque storage key
+- `replayRef` MUST NOT embed secrets (anything on-chain is public)
+- `replayRef` is limited to 256 bytes to prevent spam
+- Private viewing is achieved by encrypting the replay file and sharing the decryption key off-chain
 
 **EIP-712 Domain**:
 ```solidity
