@@ -61,16 +61,15 @@ Detail the exact conditions:
 
 ### Step 3: Define Evidence Schema (Including Replay)
 
-Specify what proof is needed for live observation. **Replay is required for PASS.**
+Specify what proof is needed for live observation. **Replay (video) is required for PASS.**
 
 ```json
 {
   "evidence": {
     "required": ["video"],
-    "replay": {
-      "required_for_pass": true,
+    "video": {
       "min_duration_seconds": 65,
-      "must_show": ["full_body", "timer", "board_detail"],
+      "must_show": ["full_body", "visible_timer", "board_detail_before_start"],
       "continuous": true,
       "min_resolution": "720p"
     },
@@ -146,11 +145,13 @@ const tx = await trialsRegistry.createTrial(
 
 Trials are versioned. Each version is immutable.
 
+> **Note:** On-chain version is a monotonic `uint32` integer (1, 2, 3...). Trial metadata may also include a semver string (e.g., `"1.0.0"`) for human readability.
+
 ```javascript
 // Add a new version to an existing Trial
 const tx = await trialsRegistry.addVersion(
   trialId,         // existing Trial ID
-  newMetadataHash  // hash of updated JSON
+  newMetadataHash  // hash of updated YAML
 );
 // Returns: version number (uint32)
 ```

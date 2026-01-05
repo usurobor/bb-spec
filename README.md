@@ -6,7 +6,7 @@
 
 > **Legend:** 🧾 Trial • 👤 Contender • 🛡️ Marshal • 🏷️ Badge • 🎥 Replay • ⛓️ On-chain • 🏆 Ladder • ✅ PASS • ⛔ NO PASS
 
-**This repository contains the protocol specification and Trial catalog.** For smart contract implementation and frontend app, see [bb-core](https://github.com/anthropics/bb-core).
+**This repository contains the protocol specification and Trial catalog.** For smart contract implementation and frontend app, see `bb-core` (separate repo).
 
 ---
 
@@ -71,7 +71,7 @@ bb-spec/
     └── v1/                # Version 1 Trials
 ```
 
-> **Note:** Smart contracts and frontend app live in [bb-core](https://github.com/anthropics/bb-core).
+> **Note:** Smart contracts and frontend app live in `bb-core` (separate repo).
 
 ---
 
@@ -117,4 +117,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 - Documentation: `/docs`
 - Trials: `/trials`
-- Implementation: [bb-core](https://github.com/anthropics/bb-core)
+- Implementation: `bb-core` (separate repo)

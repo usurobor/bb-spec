@@ -19,8 +19,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Documentation
 - Fixed path references in guides: `/standards/` → `/trials/`
 - Updated demo script to use existing Trial (slack-board-1m v1)
+- Updated pitch deck example Trial to use slack-board-1m (matches catalog)
+- Fixed architect guide evidence snippet: `evidence.replay` → `evidence.video`
+- Added version semantics note (on-chain uint32 vs metadata semver)
 - Aligned economics in pitch-deck and executive-memo to single baseFee model
-- Clarified README as spec-only repo (contracts/app in bb-core)
+- Clarified README as spec-only repo (bb-core reference as placeholder)
 
 ---
 

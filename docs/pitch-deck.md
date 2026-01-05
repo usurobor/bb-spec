@@ -52,16 +52,16 @@ PoPW is not a marketplace for judging—it is a **shared Trials and credential r
 ---
 
 ## 6) 🧪 Example Trial (serious, repeatable)
-**Single-Leg Balance Hold — 60s (🧾 trialId SLB, version 1)**
-- **Tool 🧱 spec:** defined balance board geometry (model or tolerances); official or verified-to-spec
-- **Setup checks:** show tool ID/marking; show surface; show footwear rule (barefoot/shoes) per 🧾 Trial
-- **Camera:** continuous view of full body + tool for full Run
-- **Task:** hold single-leg stance for 60s under defined posture constraints
-- **Pass rule:** no support contact; no stepping off; no prohibited bracing
+**Slack Board Balance — 60s (🧾 trialId slack-board-1m, version 1)**
+- **Tool 🧱 spec:** rocker board (70-90cm length, 25-35cm width) with cylinder fulcrum (10-15cm diameter)
+- **Setup checks:** show board dimensions; show fulcrum; confirm non-slip surface
+- **Camera:** continuous view of full body + board + fulcrum for full Run
+- **Task:** maintain balance with both feet on board for 60 continuous seconds
+- **Pass rule:** no ground touch; no external support; no stepping off
 - **🏆 Ladder rule:** rank by duration (≥60s counts as ✅ PASS; longer durations rank higher if allowed)
 - **🎥 Replay:** required for ✅ PASS; stored off-chain; hash/pointer on-chain
 
-Versioning example: **v2** may tighten camera placement or prohibited bracing without rewriting **v1** history.
+Versioning example: **v2** may tighten camera placement or add footwear constraints without rewriting **v1** history.
 
 ---
 
