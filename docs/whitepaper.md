@@ -1,18 +1,11 @@
-# Embodied Coherence (v1.0.16)
+# Embodied Coherence (v1.0.17)
 ## Proof of Physical Work (PoPW)
 
 ---
 
 ## Goal
 
-Issue durable, non-transferable credentials for physical achievements verified by authorized Marshals under shared Trials.
-
----
-
-## Motivation
-
-- Portable proof of achievement.
-- Comparable results under shared rules.
+Issue durable, non-transferable badges for physical achievements verified by authorized marshals under shared, versioned trials, with a required video replay for every minted badge.
 
 ---
 
@@ -20,10 +13,11 @@ Issue durable, non-transferable credentials for physical achievements verified b
 
 | Primitive | Description |
 |-----------|-------------|
-| **Trial** (trialId, version) | Tool spec, task, evidence requirements, pass rule, Ladder rule |
-| **Record** | 2-of-2 signed Run record (Contender + Marshal), PASS / NO PASS |
-| **Badge** | Non-transferable SBT credential minted on PASS; does not expire (v1) |
-| **$EC** | Fee / governance token |
+| **Trial** (trialId, version) | Tool spec, task, evidence requirements, pass rule, ladder rule |
+| **Record** | 2-of-2 signed run record (Contender + Marshal), PASS / NO PASS |
+| **Badge** | Non-transferable credential minted on PASS; linked to the PASS record and its replay |
+| **Replay** | Off-chain video evidence referenced by hash/pointer in the record |
+| **$EC** | Fee / governance token (fee assets may expand) |
 
 ---
 
@@ -31,44 +25,44 @@ Issue durable, non-transferable credentials for physical achievements verified b
 
 | Role | Description |
 |------|-------------|
-| **Architect** | Defines Trials; earns royalty per PASS mint |
-| **Contender** | Attempts Runs; pays fee |
-| **Marshal** | Authorized; observes live; co-signs; earns fee |
-| **Genesis Keys** | Initial Marshals; manage Marshal set in v1 |
+| **Architect** | Registers trials; earns royalty per PASS mint |
+| **Contender** | Attempts a run; pays fees |
+| **Marshal** | Authorized; observes live; co-signs; earns fees |
+| **Genesis Keys** | Initial marshal set; manage marshal registry in v1 |
 
 ---
 
 ## Registries (v1)
 
-### Trials Registry
+### Trial Registry
 - Stores: architect, (trialId, version), metadata pointer/hash.
 - Versions are immutable.
-- Registry may mark a Trial version "Ladder-eligible".
+- Registry may mark a trial version "ladder-eligible".
 
 ### Marshal Registry
-- **Phase 1 (Genesis)**: Only Genesis Keys certify.
-- **Phase 2 (Expansion)**: Candidate becomes Marshal after 3 distinct Marshals vouch on-chain.
-- **Revocation**: Genesis Keys may revoke Marshal status (v1 safety valve).
-- **Limits**: Registry may enforce rate limits per Marshal per Trial per time window.
-- **Monitoring**: Anomalous Marshal–Contender concentration may be excluded from Ladder eligibility.
+- **Phase 1 (Genesis)**: Only Genesis Keys marshal.
+- **Phase 2 (Expansion)**: Candidate becomes marshal after 3 distinct marshals vouch on-chain.
+- **Revocation**: Genesis Keys may revoke marshal status (v1 safety valve).
+- **Limits**: Registry may enforce rate limits per marshal per trial per time window.
+- **Monitoring**: Anomalous marshal–contender concentration may be excluded from ladder eligibility.
 
 ---
 
 ## Live Observation
 
-Co-located or live audio-video. Marshal may request camera/tool checks. Evidence follows the Trial.
+Co-located or live audio-video. Marshal may request camera/tool checks. Evidence requirements follow the trial.
 
 ---
 
 ## Flow
 
-1. Contender selects a Trial version and a tool matching its spec.
-2. Contender performs Run under live observation.
-3. Contender + Marshal sign one Record in the app.
+1. Contender selects a trial version and tool matching its spec.
+2. Contender records the run and performs under live observation.
+3. Contender + marshal sign one record (2-of-2).
 4. Record submitted on-chain.
-   - **PASS**: mint Badge.
-   - **NO PASS**: record Run; no Badge.
-5. Ladders rank verified PASS per Trial.
+   - **PASS**: requires replay reference; mint badge.
+   - **NO PASS**: record attempt; no badge.
+5. Ladders rank verified PASS per ladder-eligible trial version.
 
 ---
 
@@ -88,7 +82,8 @@ Co-located or live audio-video. Marshal may request camera/tool checks. Evidence
 | `nonce` | Per-contender nonce |
 | `deadline` | Signature expiry |
 | `toolId` | Optional; 0x0 if unused |
-| `evidenceHash` | Optional; 0x0 if unused |
+| `replayHash` | Required for PASS; 0x0 allowed for NO_PASS |
+| `replayRef` | Required for PASS; empty allowed for NO_PASS |
 
 ---
 
@@ -102,31 +97,31 @@ Marshal authorization is checked at submission time.
 
 Trial ID + version, Contender, Marshal, timestamp, PASS / NO PASS.
 
-**Optional**: toolId, evidence hash/pointer (off-chain).
+**For PASS**: `replayHash` + `replayRef` MUST be present (stored or emitted for indexing).
 
 ---
 
 ## Economics
 
-Fees are paid in $EC or other protocol-approved fee assets.
+Fees priced USD-equivalent and paid in protocol-approved assets.
 
-Fee split: Marshal reward (per Run), Architect royalty (PASS only), protocol ops.
+Fee split: marshal reward (per attempt), architect royalty (PASS only), protocol ops.
 
 ---
 
 ## Ladders
 
-Per Trial: rank verified PASS by the Trial's Ladder rule.
+Per trial version: rank verified PASS by the trial's ladder rule.
 
-Ladders apply to versions marked Ladder-eligible.
+Ladders apply to versions marked ladder-eligible.
 
 ---
 
 ## Privacy & Safety (v1)
 
-Recording is defined by the Trial and requires mutual consent.
-
-Media stays off-chain; Records may reference media by hash/pointer.
+- Replay is required for PASS badge issuance.
+- Media stays off-chain; on-chain stores only hash/pointer.
+- Access control (public/unlisted/encrypted) is defined by the trial and product policy.
 
 ---
 
@@ -135,11 +130,11 @@ Media stays off-chain; Records may reference media by hash/pointer.
 | Contract | Requirement |
 |----------|-------------|
 | **Marshal Registry** | Phases, vouching, revocation, rate limits |
-| **Trials Registry** | Architect + versioned metadata pointer/hash + Ladder eligibility flag |
-| **Attest + Mint** | Verifies EIP-712 signatures, nonces, deadlines, registry authorization; records Run; mints Badge on PASS |
+| **Trial Registry** | Architect + versioned metadata pointer/hash + ladder eligibility flag |
+| **Record + Mint** | Verifies EIP-712 signatures, nonces, deadlines, registry authorization; records result; enforces replay requirement on PASS; mints badge on PASS |
 | **Badge** | Transfers and approvals disabled |
 
-**Default**: one PASS per (contender, trialId, version).
+**Default**: one PASS badge per (contender, trialId, version).
 
 **Events**: TrialRegistered, MarshalVouched, MarshalRevoked, RecordSubmitted, BadgeMinted.
 
@@ -147,20 +142,14 @@ Media stays off-chain; Records may reference media by hash/pointer.
 
 ## Out of Scope (v1)
 
-Trustless verification; anonymous proving; automated fraud detection; decentralized disputes; credential revocation.
+Trustless verification; anonymous proving; automated fraud detection; decentralized disputes; badge revocation.
 
 ---
 
 ## Future
 
-Multi-marshal Records, staking, dispute flags, automated evidence checks.
+Multi-marshal records, staking, dispute flags, automated evidence checks.
 
 ---
 
-## Precedents
-
-GTO badges; WoW soulbound; POAP.
-
----
-
-*Version 1.0.16*
+*Version 1.0.17*

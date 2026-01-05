@@ -1,13 +1,13 @@
 # Architect Guide
-## Defining Trials (v1.0.16)
+## Defining Trials (v1.0.17)
 
-> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Ladder (rankings)
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Replay (video evidence) • Ladder (rankings)
 
 ---
 
 ## Overview
 
-As an **Architect**, you define the Trials that Contenders can attempt and Marshals can verify. Trials are versioned and immutable once published.
+As an **Architect**, you define the Trials that Contenders can attempt and Marshals can verify. Trials are versioned and immutable once published. Every PASS mints a Badge linked to a Replay.
 
 ---
 
@@ -16,7 +16,7 @@ As an **Architect**, you define the Trials that Contenders can attempt and Marsh
 A Trial (trialId, version) specifies:
 - **Tool spec**: equipment requirements
 - **Task**: what achievement is being certified
-- **Evidence requirements**: what proof is needed
+- **Evidence requirements**: what proof is needed (including Replay)
 - **Pass rule**: criteria for PASS vs NO PASS
 - **Ladder rule**: how to rank verified PASS results
 
@@ -59,15 +59,16 @@ Detail the exact conditions:
 }
 ```
 
-### Step 3: Define Evidence Schema
+### Step 3: Define Evidence Schema (Including Replay)
 
-Specify what proof is needed for live observation:
+Specify what proof is needed for live observation. **Replay is required for PASS.**
 
 ```json
 {
   "evidence": {
     "required": ["video"],
-    "video": {
+    "replay": {
+      "required_for_pass": true,
       "min_duration_seconds": 65,
       "must_show": ["full_body", "timer", "board_detail"],
       "continuous": true,
@@ -169,6 +170,20 @@ Ladders rank verified PASS results by your Trial's Ladder rule.
 
 ---
 
+## Replay Requirements
+
+**v1.0.17**: Replay (video evidence) is required for PASS / Badge issuance.
+
+When designing Trials, specify:
+- Minimum video duration
+- Required camera angles
+- What must be visible (equipment, timer, full body, etc.)
+- Resolution requirements
+
+The protocol enforces that `replayHash` and `replayRef` are present for every PASS.
+
+---
+
 ## Best Practices
 
 ### Be Precise
@@ -182,6 +197,7 @@ Ladders rank verified PASS results by your Trial's Ladder rule.
 ### Be Verifiable
 - Evidence requirements must be practical for live observation
 - Consider what Marshals can reasonably verify in real-time
+- Define clear Replay requirements
 
 ### Consider Safety
 - Include safety requirements where appropriate
@@ -243,4 +259,4 @@ Versions are **immutable** once published. To update:
 
 ---
 
-*Architect Guide v1.0.16*
+*Architect Guide v1.0.17*

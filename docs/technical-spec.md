@@ -1,7 +1,7 @@
 # Technical Specification
-## Embodied Coherence Protocol v1.0.16
+## Embodied Coherence Protocol v1.0.17
 
-> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (BBT credential) • Ladder (rankings)
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Replay (video evidence) • Ladder (rankings)
 
 ---
 
@@ -25,6 +25,7 @@
 │  └─────────────┘ └─────────────┘                           │
 ├─────────────────────────────────────────────────────────────┤
 │                    Storage (IPFS/Arweave)                   │
+│                    (Replay video evidence)                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -141,7 +142,7 @@ event TrialDeactivated(bytes32 indexed id);
 
 ### 2.3 PoPW.sol
 
-**Purpose**: Core Record submission and Badge minting with nonce/deadline validation.
+**Purpose**: Core Record submission and Badge minting with nonce/deadline validation and Replay enforcement.
 
 **State Variables**:
 ```solidity
@@ -154,8 +155,9 @@ struct Record {
     uint64 timestamp;
     uint64 nonce;
     uint64 deadline;
-    bytes32 toolId;        // Optional
-    bytes32 evidenceHash;  // Optional
+    bytes32 toolId;        // Optional; 0x0 if unused
+    bytes32 replayHash;    // Required for PASS; 0x0 allowed for NO_PASS
+    string replayRef;      // Required for PASS; empty allowed for NO_PASS
 }
 
 uint8 public constant PASS = 1;
@@ -220,22 +222,27 @@ function submitRecord(...) external returns (uint256 tokenId) {
         require(!hasPassed[record.contender][record.trialId][record.version], "Already passed");
         hasPassed[record.contender][record.trialId][record.version] = true;
 
-        // Mint Badge
-        tokenId = badge.mint(record.contender, record.trialId, record.version, ...);
+        // REPLAY REQUIREMENT: replayHash and replayRef MUST be present for PASS
+        require(record.replayHash != bytes32(0), "Replay hash required for PASS");
+        require(bytes(record.replayRef).length > 0, "Replay ref required for PASS");
+
+        // Mint Badge (linked to Replay)
+        tokenId = badge.mint(record.contender, record.trialId, record.version, record.marshal, record.replayHash);
 
         // Distribute fees (architect royalty on PASS only)
         _distributeFees(record.trialId, record.marshal, true);
     } else {
         // NO_PASS: record Run, no Badge
+        // replayHash and replayRef may be 0x0/empty for NO_PASS
         tokenId = 0;
 
         // Marshal still gets fee for Run
         _distributeFees(record.trialId, record.marshal, false);
     }
 
-    emit RecordSubmitted(recordHash, record.contender, record.marshal, record.trialId, record.version, record.result);
+    emit RecordSubmitted(recordHash, record.contender, record.marshal, record.trialId, record.version, record.result, record.replayHash);
     if (record.result == PASS) {
-        emit BadgeMinted(tokenId, record.contender, record.trialId, record.version);
+        emit BadgeMinted(tokenId, record.contender, record.trialId, record.version, record.replayHash);
     }
 }
 ```
@@ -248,13 +255,15 @@ event RecordSubmitted(
     address indexed marshal,
     bytes32 trialId,
     uint32 version,
-    uint8 result
+    uint8 result,
+    bytes32 replayHash
 );
 event BadgeMinted(
     uint256 indexed tokenId,
     address indexed contender,
     bytes32 indexed trialId,
-    uint32 version
+    uint32 version,
+    bytes32 replayHash
 );
 ```
 
@@ -270,7 +279,7 @@ bytes32 constant DOMAIN_TYPEHASH = keccak256(
 **EIP-712 Record Type**:
 ```solidity
 bytes32 constant RECORD_TYPEHASH = keccak256(
-    "Record(bytes32 trialId,uint32 version,address contender,address marshal,uint8 result,uint64 timestamp,uint64 nonce,uint64 deadline,bytes32 toolId,bytes32 evidenceHash)"
+    "Record(bytes32 trialId,uint32 version,address contender,address marshal,uint8 result,uint64 timestamp,uint64 nonce,uint64 deadline,bytes32 toolId,bytes32 replayHash,string replayRef)"
 );
 ```
 
@@ -278,7 +287,7 @@ bytes32 constant RECORD_TYPEHASH = keccak256(
 
 ### 2.4 Badge.sol
 
-**Purpose**: Non-transferable Soul Bound Token for credentials. Does not expire (v1).
+**Purpose**: Non-transferable Soul Bound Token for credentials, linked to Replay. Does not expire (v1).
 
 **Inheritance**: ERC-721 with transfer restrictions.
 
@@ -288,7 +297,7 @@ struct TokenData {
     bytes32 trialId;
     uint32 version;
     address marshal;
-    bytes32 evidenceHash;
+    bytes32 replayHash;    // Hash of Replay video
     uint256 earnedAt;
 }
 
@@ -303,7 +312,7 @@ function mint(
     bytes32 trialId,
     uint32 version,
     address marshal,
-    bytes32 evidenceHash
+    bytes32 replayHash
 ) external onlyPoPW returns (uint256 tokenId);
 
 function burn(uint256 tokenId) external; // Only token owner
@@ -374,7 +383,8 @@ const types = {
         { name: "nonce", type: "uint64" },
         { name: "deadline", type: "uint64" },
         { name: "toolId", type: "bytes32" },
-        { name: "evidenceHash", type: "bytes32" }
+        { name: "replayHash", type: "bytes32" },
+        { name: "replayRef", type: "string" }
     ]
 };
 ```
@@ -389,6 +399,7 @@ const types = {
 6. Recover signer from Marshal signature
 7. Verify recovered address matches `record.marshal`
 8. Verify Marshal is authorized at submission time via MarshalRegistry
+9. **For PASS**: verify `replayHash` and `replayRef` are present
 
 ---
 
@@ -432,24 +443,42 @@ function _distributeFees(bytes32 trialId, address marshal, bool isPass) internal
 
 ---
 
-## 5. Evidence Storage
+## 5. Replay (Video Evidence)
 
-### 5.1 Off-Chain Storage
+### 5.1 Replay Requirement
 
-Evidence files stored on IPFS or Arweave:
-- Video recordings
-- Witness statements
+**v1.0.17**: Replay is **required** for PASS / Badge issuance.
+
+- Every minted Badge is linked to a Replay (video evidence of the Run)
+- Contract enforces `replayHash` and `replayRef` are non-empty for PASS
+- NO_PASS Records may omit Replay (0x0 / empty allowed)
+
+### 5.2 Off-Chain Storage
+
+Replay files stored on IPFS or Arweave:
+- Video recordings of Runs
 - Metadata
 
-Media stays off-chain; recording requires mutual consent as defined by the Trial.
+Media stays off-chain; on-chain stores only hash/pointer.
 
-### 5.2 On-Chain Reference
+### 5.3 On-Chain Reference
 
 ```solidity
-bytes32 evidenceHash = keccak256(abi.encodePacked(ipfsCid));
+// replayHash = hash of video content (for integrity)
+bytes32 replayHash = keccak256(videoBytes);
+
+// replayRef = pointer to off-chain storage (e.g., IPFS CID)
+string replayRef = "ipfs://Qm...";
 ```
 
-Records may reference media by hash/pointer.
+Records and Badges reference Replay by hash/pointer.
+
+### 5.4 Privacy & Access Control
+
+Access control (public/unlisted/encrypted) is defined by the Trial and product policy:
+- **Public**: Replay accessible to anyone
+- **Unlisted**: Replay accessible via direct link only
+- **Encrypted**: Replay encrypted, decryption keys managed off-chain
 
 ---
 
@@ -493,7 +522,8 @@ type Run @entity {
   trial: Trial!
   version: Int!
   tokenId: BigInt
-  evidenceHash: Bytes!
+  replayHash: Bytes!
+  replayRef: String!
   result: Int!
   timestamp: BigInt!
 }
@@ -531,6 +561,11 @@ Anomalous Marshal–Contender concentration may be excluded from Ladder eligibil
 - Marshal authorization checked at submission time
 - A revoked Marshal cannot submit new Records
 
+### 7.5 Replay Enforcement
+- PASS requires non-empty `replayHash` and `replayRef`
+- Contract enforces this at submission time
+- Prevents missing-evidence disputes
+
 ---
 
 ## 8. Gas Optimization
@@ -539,6 +574,7 @@ Anomalous Marshal–Contender concentration may be excluded from Ladder eligibil
 - Use bytes32 for IDs
 - Batch operations where possible
 - Minimize storage writes
+- replayRef stored as event data (not in storage) where possible
 
 ---
 
@@ -564,4 +600,4 @@ Contracts designed for minimal upgradeability:
 
 ---
 
-*Technical Specification v1.0.16 — January 2026*
+*Technical Specification v1.0.17 — January 2026*

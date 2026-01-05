@@ -1,13 +1,13 @@
 # Marshal Guide
-## Verifying Physical Achievements (v1.0.16)
+## Verifying Physical Achievements (v1.0.17)
 
-> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Ladder (rankings)
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Replay (video evidence) • Ladder (rankings)
 
 ---
 
 ## Overview
 
-As a **Marshal**, you verify that Contenders have genuinely completed physical achievements through **live observation**. Your Records enable the minting of Badges on PASS.
+As a **Marshal**, you verify that Contenders have genuinely completed physical achievements through **live observation**. Your Records enable the minting of Badges on PASS, with each Badge linked to a required Replay.
 
 ---
 
@@ -45,8 +45,9 @@ console.log(`Vouches: ${vouches.length}/3`);
 1. **Live Observation**: Observe Runs in real-time (co-located or video)
 2. **Honest Verification**: Only sign genuine achievements
 3. **Thorough Review**: Check all Trial requirements
-4. **Timely Response**: Respond to Contender requests promptly
-5. **Maintain Integrity**: Uphold protocol Trials
+4. **Verify Replay**: Confirm Contender is recording (required for PASS)
+5. **Timely Response**: Respond to Contender requests promptly
+6. **Maintain Integrity**: Uphold protocol Trials
 
 ### Revocation (v1 Safety Valve)
 
@@ -105,6 +106,7 @@ Key elements to review:
 - **Live video**: Real-time audio-video call
 
 **During Observation**:
+- Verify Contender is recording (Replay is required for PASS)
 - Verify equipment matches tool spec
 - Watch the entire Run in real-time
 - Note timestamps and key moments
@@ -119,12 +121,14 @@ Recording is defined by the Trial and requires **mutual consent**.
 - Evidence is unambiguous
 - No signs of manipulation
 - Observed live as required
+- **Replay was captured** (required for Badge)
 
 **NO PASS (result=0)** if:
 - Requirements not met
 - Evidence insufficient
 - Concerns about authenticity
 - Observation was not truly live
+- Replay was not properly captured (if claiming PASS)
 
 ### Step 5: Co-sign Record
 
@@ -141,7 +145,8 @@ const record = {
   nonce: await popw.getCurrentNonce(contenderAddress),
   deadline: Math.floor(Date.now() / 1000) + 3600,
   toolId: toolId,           // Optional
-  evidenceHash: evidenceHash // Optional
+  replayHash: replayHash,   // Required for PASS
+  replayRef: replayRef      // Required for PASS
 };
 
 // Sign using EIP-712
@@ -161,6 +166,7 @@ Send the Contender:
 - Signed Record data
 - Your signature
 - Any feedback
+- Confirmation of Replay details
 
 ---
 
@@ -169,6 +175,7 @@ Send the Contender:
 ### Live Observation Checklist
 
 - [ ] Observation is real-time (not recorded)
+- [ ] Contender is recording (Replay required for PASS)
 - [ ] Equipment matches Trial tool spec
 - [ ] Achievement completed as specified
 - [ ] Duration requirements met
@@ -182,6 +189,7 @@ Send the Contender:
 - Cuts or transitions in recording
 - Obscured key moments
 - Inconsistent timestamps
+- Contender not recording (cannot issue PASS)
 
 ---
 
@@ -243,6 +251,7 @@ Trial with 100 $EC base fee, 60% Marshal share:
 - Review all requirements before signing
 - Don't rush verifications
 - Ask for clarification if needed
+- Verify Replay is being captured
 
 ### Be Fair
 - Apply Trials consistently
@@ -258,6 +267,7 @@ Trial with 100 $EC base fee, 60% Marshal share:
 - Never sign unverified achievements
 - Report suspicious activity
 - Maintain protocol integrity
+- Don't sign PASS without valid Replay
 
 ### Monitor Your Limits
 - Be aware of rate limits per Trial
@@ -282,6 +292,13 @@ If observation has technical problems:
 2. Ensure better connection/setup
 3. Don't sign based on incomplete observation
 
+### Missing Replay
+
+If Contender didn't record or recording failed:
+1. Cannot issue PASS (Replay required for Badge)
+2. May issue NO PASS to record the Run
+3. Schedule another Run with proper recording
+
 ### Disputes
 
 If Contender disagrees with NO PASS:
@@ -305,4 +322,4 @@ Anomalous Marshal–Contender concentration may be excluded from Ladder eligibil
 
 ---
 
-*Marshal Guide v1.0.16*
+*Marshal Guide v1.0.17*

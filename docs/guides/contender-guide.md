@@ -1,13 +1,13 @@
 # Contender Guide
-## Earning Badges for Physical Achievements (v1.0.16)
+## Earning Badges for Physical Achievements (v1.0.17)
 
-> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Ladder (rankings)
+> **Vocabulary:** Architect (defines Trials) • Contender (attempts) • Marshal (observes) • Trial (the test) • Run (one attempt) • Record (signed attestation) • Badge (credential) • Replay (video evidence) • Ladder (rankings)
 
 ---
 
 ## Overview
 
-As a **Contender**, you perform physical feats under **live observation** and receive verifiable on-chain credentials. Your achievements are recorded as non-transferable Badges on PASS, or as Run records on NO PASS.
+As a **Contender**, you perform physical feats under **live observation** and receive verifiable on-chain credentials. Your achievements are recorded as non-transferable Badges on PASS (linked to your Replay), or as Run records on NO PASS.
 
 ---
 
@@ -17,14 +17,14 @@ As a **Contender**, you perform physical feats under **live observation** and re
 
 1. **Wallet**: Ethereum-compatible wallet (MetaMask, Rainbow, etc.)
 2. **$EC Tokens**: For Run fees
-3. **Evidence Capture**: Camera/phone for live observation recording
+3. **Recording Setup**: Camera/phone for Replay capture (required for PASS)
 
 ---
 
 ## Certification Flow
 
 ```
-🧾 Select Trial → 👀 Live Run → ✍️ Co-sign Record → ⛓️ Submit → 🏷️ Badge + 🏆 Ladder
+🧾 Select Trial → 🎥 Record → 👀 Live Run → ✍️ Co-sign Record → ⛓️ Submit → 🏷️ Badge + 🏆 Ladder
 ```
 
 ---
@@ -47,17 +47,17 @@ Consider:
 
 ---
 
-## Step 2: Live Observation
+## Step 2: Set Up Recording (Replay)
 
-Runs require **live observation** by an authorized Marshal.
+**Replay is required for PASS / Badge issuance.** Every minted Badge links to your Replay.
 
-### Observation Methods
-- **Co-located**: Marshal present in person
-- **Live video**: Real-time audio-video call
+### Recording Setup
+- Position camera for clear, continuous view
+- Ensure good lighting
+- Check audio if required by Trial
+- Verify timer/clock is visible
 
-### Recording Requirements
-Recording is defined by the Trial and requires **mutual consent**.
-
+### Recording Requirements (per Trial)
 Evidence requirements typically include:
 - Continuous video (no cuts)
 - Clear view of the activity
@@ -67,19 +67,31 @@ Evidence requirements typically include:
 
 ---
 
-## Step 3: Perform the Run
+## Step 3: Live Observation
+
+Runs require **live observation** by an authorized Marshal.
+
+### Observation Methods
+- **Co-located**: Marshal present in person
+- **Live video**: Real-time audio-video call
 
 ### During Live Observation
 
-1. **Start recording** before you begin
+1. **Start recording** before you begin (Replay capture)
 2. **Show setup**: Capture equipment details matching Trial spec
 3. **Stay in frame**: Full body visible throughout
 4. **Include timer**: Visible countdown/stopwatch
 5. **Continue after**: Record a few seconds past completion
 
+---
+
+## Step 4: Perform the Run
+
+Execute the Trial task under live observation while recording.
+
 ### Evidence Quality
 
-Good evidence should:
+Good Replay should:
 - Be continuous (no edits)
 - Clearly show the achievement
 - Meet all Trial requirements
@@ -87,7 +99,7 @@ Good evidence should:
 
 ---
 
-## Step 4: Co-sign Record
+## Step 5: Co-sign Record
 
 After the Run, you and the Marshal co-sign one Record (2-of-2):
 
@@ -102,7 +114,8 @@ const record = {
   nonce: await popw.getCurrentNonce(yourAddress),
   deadline: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
   toolId: toolId,           // Optional: 0x0 if unused
-  evidenceHash: evidenceHash // Optional: 0x0 if unused
+  replayHash: replayHash,   // Required for PASS; hash of video
+  replayRef: replayRef      // Required for PASS; e.g., "ipfs://Qm..."
 };
 
 // Both sign the same EIP-712 message
@@ -116,9 +129,13 @@ const domain = {
 const contenderSig = await signer.signTypedData(domain, types, record);
 ```
 
+### Replay Fields (Required for PASS)
+- **replayHash**: Hash of video content (integrity check)
+- **replayRef**: Pointer to off-chain storage (e.g., IPFS CID)
+
 ---
 
-## Step 5: Submit to Contract
+## Step 6: Submit to Contract
 
 ```javascript
 const tx = await popw.submitRecord(
@@ -131,8 +148,8 @@ const tx = await popw.submitRecord(
 ### Outcomes
 
 **PASS (result=1)**:
-- Badge minted to your wallet
-- Run recorded on-chain
+- Badge minted to your wallet (linked to Replay)
+- Run recorded on-chain with replayHash
 - Added to Ladder (if version eligible)
 
 **NO PASS (result=0)**:
@@ -142,14 +159,14 @@ const tx = await popw.submitRecord(
 
 ---
 
-## Step 6: View Your Badges
+## Step 7: View Your Badges
 
 ```javascript
 // Get your credential tokens
 const balance = await badge.balanceOf(yourAddress);
 const tokenId = await badge.tokenOfOwnerByIndex(yourAddress, 0);
 const data = await badge.tokenData(tokenId);
-// Returns: { trialId, version, marshal, evidenceHash, earnedAt }
+// Returns: { trialId, version, marshal, replayHash, earnedAt }
 ```
 
 ### Badge Properties
@@ -157,6 +174,7 @@ const data = await badge.tokenData(tokenId);
 - **Non-transferable**: Cannot be transferred or sold
 - **Does not expire**: Badges do not expire in v1
 - **One per version**: Default is one PASS per (contender, trialId, version)
+- **Linked to Replay**: Every Badge references its Replay video
 
 ---
 
@@ -199,11 +217,12 @@ Only versions marked **Ladder-eligible** appear on Ladders.
 - Review Trial requirements carefully
 - Ensure equipment matches tool spec exactly
 
-### Evidence
+### Recording (Replay)
 - Good lighting
 - Stable camera position
 - Clear view of all requirements
 - Visible timer
+- No cuts or transitions
 
 ### Communication
 - Coordinate with Marshal for live observation
@@ -233,6 +252,14 @@ Only versions marked **Ladder-eligible** appear on Ladders.
 - Marshal hit their rate limit for this Trial
 - Wait or find another Marshal
 
+### "Replay hash required for PASS"
+- Missing replayHash in Record
+- Ensure you've uploaded Replay and included the hash
+
+### "Replay ref required for PASS"
+- Missing replayRef in Record
+- Include the IPFS CID or storage pointer
+
 ---
 
 ## Support
@@ -243,4 +270,4 @@ Only versions marked **Ladder-eligible** appear on Ladders.
 
 ---
 
-*Contender Guide v1.0.16*
+*Contender Guide v1.0.17*
