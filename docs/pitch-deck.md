@@ -108,13 +108,13 @@ PoPW v1 is permissioned to prioritize signal quality.
 ## 10) 💸 Economics (one coherent example)
 Fees are priced in USD-equivalent and paid in protocol-approved assets (v1 supports $EC; stable assets can be added as approved fee assets).
 
-**Illustrative example**
-- **Run fee: $10** (covers live labor)
-  - $7 🛡️ Marshal reward (per Run)
-  - $3 Protocol ops
-- **✅ PASS mint fee: $5** (funds issuance + Architect royalties)
-  - $3 Architect royalty (PASS only)
-  - $2 Protocol ops
+**Single base fee per Run (illustrative: $10)**
+- 🛡️ Marshal reward: $6 (paid per Run, PASS or NO PASS)
+- On ✅ PASS:
+  - Architect royalty: $2 (20% of base fee, PASS only)
+  - Protocol ops: $2
+- On ⛔ NO PASS:
+  - Protocol ops: $4 (Architect royalty not paid)
 
 ---
 

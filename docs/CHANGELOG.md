@@ -14,6 +14,13 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - YAML provides better readability and supports comments for safety notes
 - Updated schema.json → schema.yaml
 - Trial files: sadhu-board-1m.yaml, heavy-cup.yaml, slack-board-1m.yaml, lotus-wheel-1m.yaml
+- Renamed `creator_royalty_bps` → `architect_royalty_bps` for vocabulary consistency
+
+### Documentation
+- Fixed path references in guides: `/standards/` → `/trials/`
+- Updated demo script to use existing Trial (slack-board-1m v1)
+- Aligned economics in pitch-deck and executive-memo to single baseFee model
+- Clarified README as spec-only repo (contracts/app in bb-core)
 
 ---
 

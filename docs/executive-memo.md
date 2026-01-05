@@ -32,8 +32,9 @@ Integrity-first: permissioned 🛡️ Marshals.
 - 🎥 Replay required for ✅ PASS / 🏷️ Badge (prevents missing-evidence claims)
 
 ### 💸 Economics (illustrative)
-- Run fee covers live labor (🛡️ paid per Run)
-- ✅ PASS mint fee funds issuance + Architect royalty (PASS only)
+- Single base fee per Run (covers live labor + issuance)
+- 🛡️ Marshal paid per Run (PASS or NO PASS)
+- Architect royalty paid on ✅ PASS only; remainder to protocol ops
 - Fees priced USD-equivalent; paid in protocol-approved assets
 
 ### ✅ Status

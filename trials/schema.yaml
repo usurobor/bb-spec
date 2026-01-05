@@ -203,17 +203,17 @@ properties:
     description: Economic parameters
     required:
       - base_fee_ec
-      - creator_royalty_bps
+      - architect_royalty_bps
     properties:
       base_fee_ec:
         type: number
         minimum: 0
         description: Base certification fee in $EC tokens
-      creator_royalty_bps:
+      architect_royalty_bps:
         type: integer
         minimum: 0
         maximum: 3000
-        description: Creator royalty in basis points (max 30%)
+        description: Architect royalty in basis points (max 30%)
 
   safety:
     type: object

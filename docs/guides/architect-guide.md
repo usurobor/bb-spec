@@ -115,8 +115,8 @@ Define your royalty share (earned on PASS only):
 ### 1. Validate Against Schema
 
 ```bash
-# Validate your Trial JSON
-npx ajv validate -s standards/schema.json -d your-trial.json
+# Validate your Trial YAML
+npx ajv validate -s trials/schema.yaml -d your-trial.yaml
 ```
 
 ### 2. Compute Metadata Hash
@@ -253,8 +253,8 @@ Versions are **immutable** once published. To update:
 
 ## Support
 
-- Schema reference: `/standards/schema.json`
-- Example Trials: `/standards/v1/`
+- Schema reference: `/trials/schema.yaml`
+- Example Trials: `/trials/v1/`
 - Technical spec: `/docs/technical-spec.md`
 
 ---

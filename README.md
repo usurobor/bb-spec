@@ -1,10 +1,12 @@
-# Embodied Coherence Protocol
+# Embodied Coherence Protocol — Spec
 
 **Proof-of-Physical-Work (PoPW) — Live-observed certification for physical achievements.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Legend:** 🧾 Trial • 👤 Contender • 🛡️ Marshal • 🏷️ Badge • 🎥 Replay • ⛓️ On-chain • 🏆 Ladder • ✅ PASS • ⛔ NO PASS
+
+**This repository contains the protocol specification and Trial catalog.** For smart contract implementation and frontend app, see [bb-core](https://github.com/anthropics/bb-core).
 
 ---
 
@@ -54,7 +56,7 @@ Embodied Coherence is a protocol that issues non-transferable 🏷️ credential
 ## Repository Structure
 
 ```
-bodybound/
+bb-spec/
 ├── docs/                  # Protocol documentation
 │   ├── whitepaper.md      # Full protocol specification (v1.0.17)
 │   ├── CHANGELOG.md       # Version history
@@ -64,39 +66,12 @@ bodybound/
 │   ├── diligence-faq.md   # Investor Q&A
 │   ├── technical-spec.md  # Technical implementation details (v1.0.17)
 │   └── guides/            # Role-specific guides
-├── contracts/             # Solidity smart contracts (Foundry)
-│   ├── src/               # Contract source files
-│   ├── test/              # Contract tests
-│   └── script/            # Deployment scripts
-├── trials/             # Trial definitions
-│   ├── schema.yaml        # Trial schema (YAML)
-│   └── v1/                # Version 1 Trials (YAML)
-├── app/                   # Frontend application
-└── assets/                # Branding and media assets
+└── trials/                # Trial definitions (YAML)
+    ├── schema.yaml        # Trial validation schema
+    └── v1/                # Version 1 Trials
 ```
 
----
-
-## Quick Start
-
-### Prerequisites
-
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) for smart contract development
-- Node.js 18+ for frontend
-
-### Build Contracts
-
-```bash
-cd contracts
-forge build
-```
-
-### Run Tests
-
-```bash
-cd contracts
-forge test
-```
+> **Note:** Smart contracts and frontend app live in [bb-core](https://github.com/anthropics/bb-core).
 
 ---
 
@@ -141,5 +116,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## Links
 
 - Documentation: `/docs`
-- Contracts: `/contracts`
 - Trials: `/trials`
+- Implementation: [bb-core](https://github.com/anthropics/bb-core)

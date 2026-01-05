@@ -50,7 +50,7 @@ scoring:
 
 economics:
   base_fee_ec: 25
-  creator_royalty_bps: 1500  # 15%
+  architect_royalty_bps: 1500  # 15%
 
 safety:
   warnings:
